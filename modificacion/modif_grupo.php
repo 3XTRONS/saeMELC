@@ -77,8 +77,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 </div>
 
                 <div class="mb-3">
-                    <label class="form-label">Nombre del grupo / Semestre</label>
-                    <input type="text" name="nombre_grupo" class="form-control" value="<?php echo htmlspecialchars($grupo['nombre_grupo']); ?>" required>
+                    <label class="form-label">Descripcion</label>
+                    <input type="text" name="descripcion" class="form-control" value="<?php echo htmlspecialchars($grupo['nombre_grupo']); ?>" required>
                 </div>
 
                 <div class="d-flex align-items-center gap-3 mt-4">

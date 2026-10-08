@@ -74,8 +74,8 @@ if (isset($_GET['status'])) {
                 </div>
 
                 <div class="mb-3">
-                    <label class="form-label">Nombre del grupo / Semestre</label>
-                    <input type="text" name="nombre_grupo" class="form-control" required placeholder="Ej. 4° Semestre Tecnologías de la Información">
+                    <label class="form-label">Descripcion</label>
+                    <input type="text" name="descripcion" class="form-control" required placeholder="desc.">
                 </div>
 
                 <div class="d-flex align-items-center gap-3 mt-4">
