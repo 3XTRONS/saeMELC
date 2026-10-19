@@ -2,18 +2,18 @@
 
 <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
   <a class="navbar-brand" href="#">SAE</a>
-  <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNavDropdown">
+  <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNavDropdown" aria-controls="navbarNavDropdown" aria-expanded="false" aria-label="Toggle navigation">
     <span class="navbar-toggler-icon"></span>
   </button>
   <div class="collapse navbar-collapse" id="navbarNavDropdown">
     <ul class="navbar-nav">
       
-      <!-- CATÁLOGOS -->
+      <!-- REGISTROS / CATÁLOGOS -->
       <li class="nav-item dropdown">
-        <a class="nav-link dropdown-toggle" href="#" id="navbarDropdownMenuLink" data-toggle="dropdown">
-          Catálogos
+        <a class="nav-link dropdown-toggle" href="#" id="navbarDropdownMenuLink" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+          Registros
         </a>
-        <div class="dropdown-menu">
+        <div class="dropdown-menu" aria-labelledby="navbarDropdownMenuLink">
           <a class="dropdown-item" href="../crude/crude_alumno.php">Alumnos</a>
           <a class="dropdown-item" href="../crude/crude_profesores.php">Profesores</a>
           <a class="dropdown-item" href="../crude/crude_materias.php">Materias</a>
@@ -23,23 +23,31 @@
 
       <!-- PROCESOS -->
       <li class="nav-item dropdown">
-        <a class="nav-link dropdown-toggle" href="#" id="navbarDropdownMenuLink2" data-toggle="dropdown">
-          Registros
+        <a class="nav-link dropdown-toggle" href="#" id="navbarDropdownMenuLink2" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+          Procesos
         </a>
-        <div class="dropdown-menu">
+        <div class="dropdown-menu" aria-labelledby="navbarDropdownMenuLink2">
+          <!-- Modulos de Registro basico -->
           <a class="dropdown-item" href="../registro/reg_alumno.php">Registro Alumno</a>
           <a class="dropdown-item" href="../registro/reg_profesor.php">Registro Profesor</a>
           <a class="dropdown-item" href="../registro/reg_materia.php">Registro Materia</a>
           <a class="dropdown-item" href="../registro/reg_grupo.php">Registro Grupo</a>
+          
+          <div class="dropdown-divider"></div>
+          
+          <!-- Nuevos procesos requeridos por el profesor -->
+          <a class="dropdown-item" href="../procesos/inscripcion_grupo.php">Inscripción a grupos</a>
+          <a class="dropdown-item" href="../procesos/asignacion_materia.php">Asignación de materias</a>
+          <a class="dropdown-item" href="../procesos/captura_calificaciones.php">Captura de calificaciones</a>
         </div>
       </li>
 
       <!-- REPORTES -->
       <li class="nav-item dropdown">
-        <a class="nav-link dropdown-toggle" href="#" id="navbarDropdownMenuLink3" data-toggle="dropdown">
+        <a class="nav-link dropdown-toggle" href="#" id="navbarDropdownMenuLink3" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
           Reportes
         </a>
-        <div class="dropdown-menu">
+        <div class="dropdown-menu" aria-labelledby="navbarDropdownMenuLink3">
           <a class="dropdown-item" href="../reportes/rep_general.php">Reporte General</a>
         </div>
       </li>
