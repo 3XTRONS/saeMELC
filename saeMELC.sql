@@ -3,9 +3,9 @@
 -- https://www.phpmyadmin.net/
 --
 -- Servidor: 127.0.0.1
--- Tiempo de generación: 01-10-2026 a las 04:17:19
+-- Tiempo de generación: 19-10-2026 a las 16:41:25
 -- Versión del servidor: 10.4.32-MariaDB
--- Versión de PHP: 8.2.12
+-- Versión de PHP: 8.0.30
 
 SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
 START TRANSACTION;
@@ -18,7 +18,7 @@ SET time_zone = "+00:00";
 /*!40101 SET NAMES utf8mb4 */;
 
 --
--- Base de datos: `saeMELC`
+-- Base de datos: `saemelc`
 --
 
 -- --------------------------------------------------------
@@ -50,6 +50,52 @@ INSERT INTO `alumnos` (`idalumn`, `matricula_al`, `nombre_al`, `apaterno_al`, `a
 -- --------------------------------------------------------
 
 --
+-- Estructura de tabla para la tabla `asignaciones`
+--
+
+CREATE TABLE `asignaciones` (
+  `idasignatura` int(11) NOT NULL,
+  `idmat` int(11) NOT NULL,
+  `idalumn` int(11) NOT NULL,
+  `idprof` int(11) NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Volcado de datos para la tabla `asignaciones`
+--
+
+INSERT INTO `asignaciones` (`idasignatura`, `idmat`, `idalumn`, `idprof`) VALUES
+(1, 1, 1, 1),
+(2, 1, 3, 2);
+
+-- --------------------------------------------------------
+
+--
+-- Estructura de tabla para la tabla `calificaciones`
+--
+
+CREATE TABLE `calificaciones` (
+  `id_calif` int(11) NOT NULL,
+  `idalumn` int(11) NOT NULL,
+  `id_unidad` int(11) NOT NULL,
+  `calificacion` decimal(4,2) NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Volcado de datos para la tabla `calificaciones`
+--
+
+INSERT INTO `calificaciones` (`id_calif`, `idalumn`, `id_unidad`, `calificacion`) VALUES
+(1, 1, 1, 8.00),
+(2, 3, 1, 10.00),
+(3, 1, 2, 7.00),
+(4, 3, 2, 9.00),
+(5, 1, 10, 9.00),
+(6, 3, 10, 7.00);
+
+-- --------------------------------------------------------
+
+--
 -- Estructura de tabla para la tabla `grupos`
 --
 
@@ -69,6 +115,27 @@ INSERT INTO `grupos` (`idgrupo`, `clave_grupo`, `nombre_grupo`, `estatus_grupo`)
 (2, '101', '1° Semestre Tecnologías de la Información', 'ALTA'),
 (3, '407', '7° Semestre Tecnologías de la Información.', 'BAJA'),
 (4, '102', '2° Semestre Tecnologías de la Información', 'ALTA');
+
+-- --------------------------------------------------------
+
+--
+-- Estructura de tabla para la tabla `grupo_alumnos`
+--
+
+CREATE TABLE `grupo_alumnos` (
+  `id_ga` int(11) NOT NULL,
+  `idgrupo` int(11) NOT NULL,
+  `idalumn` int(11) NOT NULL,
+  `estatus` varchar(10) DEFAULT 'ALTA'
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Volcado de datos para la tabla `grupo_alumnos`
+--
+
+INSERT INTO `grupo_alumnos` (`id_ga`, `idgrupo`, `idalumn`, `estatus`) VALUES
+(1, 1, 1, 'ALTA'),
+(2, 1, 3, 'ALTA');
 
 -- --------------------------------------------------------
 
@@ -132,10 +199,28 @@ ALTER TABLE `alumnos`
   ADD PRIMARY KEY (`idalumn`);
 
 --
+-- Indices de la tabla `asignaciones`
+--
+ALTER TABLE `asignaciones`
+  ADD PRIMARY KEY (`idasignatura`);
+
+--
+-- Indices de la tabla `calificaciones`
+--
+ALTER TABLE `calificaciones`
+  ADD PRIMARY KEY (`id_calif`);
+
+--
 -- Indices de la tabla `grupos`
 --
 ALTER TABLE `grupos`
   ADD PRIMARY KEY (`idgrupo`);
+
+--
+-- Indices de la tabla `grupo_alumnos`
+--
+ALTER TABLE `grupo_alumnos`
+  ADD PRIMARY KEY (`id_ga`);
 
 --
 -- Indices de la tabla `materias`
@@ -160,10 +245,28 @@ ALTER TABLE `alumnos`
   MODIFY `idalumn` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=8;
 
 --
+-- AUTO_INCREMENT de la tabla `asignaciones`
+--
+ALTER TABLE `asignaciones`
+  MODIFY `idasignatura` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
+
+--
+-- AUTO_INCREMENT de la tabla `calificaciones`
+--
+ALTER TABLE `calificaciones`
+  MODIFY `id_calif` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=7;
+
+--
 -- AUTO_INCREMENT de la tabla `grupos`
 --
 ALTER TABLE `grupos`
   MODIFY `idgrupo` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
+
+--
+-- AUTO_INCREMENT de la tabla `grupo_alumnos`
+--
+ALTER TABLE `grupo_alumnos`
+  MODIFY `id_ga` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
 
 --
 -- AUTO_INCREMENT de la tabla `materias`
@@ -175,29 +278,3 @@ COMMIT;
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
 /*!40101 SET CHARACTER_SET_RESULTS=@OLD_CHARACTER_SET_RESULTS */;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
--- Tabla para Inscripción a grupos
-CREATE TABLE IF NOT EXISTS `grupo_alumnos` (
-  `id_ga` INT(11) NOT NULL AUTO_INCREMENT,
-  `idgrupo` INT(11) NOT NULL,
-  `idalumn` INT(11) NOT NULL,
-  `estatus` VARCHAR(10) DEFAULT 'ALTA',
-  PRIMARY KEY (`id_ga`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-
--- Tabla para Asignación de materias
-CREATE TABLE IF NOT EXISTS `asignaciones` (
-  `idasignatura` INT(11) NOT NULL AUTO_INCREMENT,
-  `idmat` INT(11) NOT NULL,
-  `idalumn` INT(11) NOT NULL,
-  `idprof` INT(11) NOT NULL,
-  PRIMARY KEY (`idasignatura`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-
--- Tabla para Captura de calificaciones
-CREATE TABLE IF NOT EXISTS `calificaciones` (
-  `id_calif` INT(11) NOT NULL AUTO_INCREMENT,
-  `idalumn` INT(11) NOT NULL,
-  `id_unidad` INT(11) NOT NULL,
-  `calificacion` DECIMAL(4,2) NOT NULL,
-  PRIMARY KEY (`id_calif`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
