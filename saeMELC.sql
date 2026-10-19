@@ -175,3 +175,29 @@ COMMIT;
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
 /*!40101 SET CHARACTER_SET_RESULTS=@OLD_CHARACTER_SET_RESULTS */;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
+-- Tabla para Inscripción a grupos
+CREATE TABLE IF NOT EXISTS `grupo_alumnos` (
+  `id_ga` INT(11) NOT NULL AUTO_INCREMENT,
+  `idgrupo` INT(11) NOT NULL,
+  `idalumn` INT(11) NOT NULL,
+  `estatus` VARCHAR(10) DEFAULT 'ALTA',
+  PRIMARY KEY (`id_ga`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- Tabla para Asignación de materias
+CREATE TABLE IF NOT EXISTS `asignaciones` (
+  `idasignatura` INT(11) NOT NULL AUTO_INCREMENT,
+  `idmat` INT(11) NOT NULL,
+  `idalumn` INT(11) NOT NULL,
+  `idprof` INT(11) NOT NULL,
+  PRIMARY KEY (`idasignatura`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- Tabla para Captura de calificaciones
+CREATE TABLE IF NOT EXISTS `calificaciones` (
+  `id_calif` INT(11) NOT NULL AUTO_INCREMENT,
+  `idalumn` INT(11) NOT NULL,
+  `id_unidad` INT(11) NOT NULL,
+  `calificacion` DECIMAL(4,2) NOT NULL,
+  PRIMARY KEY (`id_calif`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
