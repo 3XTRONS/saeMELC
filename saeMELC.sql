@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Servidor: 127.0.0.1
--- Tiempo de generación: 01-10-2026 a las 04:17:19
+-- Tiempo de generación: 20-10-2026 a las 13:59:01
 -- Versión del servidor: 10.4.32-MariaDB
 -- Versión de PHP: 8.2.12
 
@@ -50,6 +50,46 @@ INSERT INTO `alumnos` (`idalumn`, `matricula_al`, `nombre_al`, `apaterno_al`, `a
 -- --------------------------------------------------------
 
 --
+-- Estructura de tabla para la tabla `asignaciones`
+--
+
+CREATE TABLE `asignaciones` (
+  `idasignatura` int(11) NOT NULL,
+  `idmat` int(11) NOT NULL,
+  `idalumn` int(11) NOT NULL,
+  `idprof` int(11) NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Volcado de datos para la tabla `asignaciones`
+--
+
+INSERT INTO `asignaciones` (`idasignatura`, `idmat`, `idalumn`, `idprof`) VALUES
+(1, 2, 3, 1);
+
+-- --------------------------------------------------------
+
+--
+-- Estructura de tabla para la tabla `calificaciones`
+--
+
+CREATE TABLE `calificaciones` (
+  `id_calif` int(11) NOT NULL,
+  `idalumn` int(11) NOT NULL,
+  `id_unidad` int(11) NOT NULL,
+  `calificacion` decimal(4,2) NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Volcado de datos para la tabla `calificaciones`
+--
+
+INSERT INTO `calificaciones` (`id_calif`, `idalumn`, `id_unidad`, `calificacion`) VALUES
+(1, 1, 1, 10.00);
+
+-- --------------------------------------------------------
+
+--
 -- Estructura de tabla para la tabla `grupos`
 --
 
@@ -73,6 +113,26 @@ INSERT INTO `grupos` (`idgrupo`, `clave_grupo`, `nombre_grupo`, `estatus_grupo`)
 -- --------------------------------------------------------
 
 --
+-- Estructura de tabla para la tabla `grupo_alumnos`
+--
+
+CREATE TABLE `grupo_alumnos` (
+  `id_ga` int(11) NOT NULL,
+  `idgrupo` int(11) NOT NULL,
+  `idalumn` int(11) NOT NULL,
+  `estatus` varchar(10) DEFAULT 'ALTA'
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Volcado de datos para la tabla `grupo_alumnos`
+--
+
+INSERT INTO `grupo_alumnos` (`id_ga`, `idgrupo`, `idalumn`, `estatus`) VALUES
+(1, 1, 1, 'ALTA');
+
+-- --------------------------------------------------------
+
+--
 -- Estructura de tabla para la tabla `materias`
 --
 
@@ -92,7 +152,10 @@ INSERT INTO `materias` (`idmat`, `clave_mat`, `nombre_mat`, `creditos`, `estatus
 (1, 'MAT01', 'Matematicas Discretas', 4, 'ALTA'),
 (2, 'PROG02', 'Programacion II', 5, 'ALTA'),
 (3, 'Filo01', 'Filosofia', 1, 'BAJA'),
-(4, 'FILO02', 'Filosofia II', 2, 'ALTA');
+(4, 'FILO02', 'Filosofia II', 2, 'ALTA'),
+(5, 'DB01', 'Base de Datos', 5, 'ALTA'),
+(6, 'rrr34', '', 4, 'BAJA'),
+(7, 'MAT07', 'Matematicas para la toma de Decisiones', 2, 'ALTA');
 
 -- --------------------------------------------------------
 
@@ -132,10 +195,28 @@ ALTER TABLE `alumnos`
   ADD PRIMARY KEY (`idalumn`);
 
 --
+-- Indices de la tabla `asignaciones`
+--
+ALTER TABLE `asignaciones`
+  ADD PRIMARY KEY (`idasignatura`);
+
+--
+-- Indices de la tabla `calificaciones`
+--
+ALTER TABLE `calificaciones`
+  ADD PRIMARY KEY (`id_calif`);
+
+--
 -- Indices de la tabla `grupos`
 --
 ALTER TABLE `grupos`
   ADD PRIMARY KEY (`idgrupo`);
+
+--
+-- Indices de la tabla `grupo_alumnos`
+--
+ALTER TABLE `grupo_alumnos`
+  ADD PRIMARY KEY (`id_ga`);
 
 --
 -- Indices de la tabla `materias`
@@ -160,16 +241,34 @@ ALTER TABLE `alumnos`
   MODIFY `idalumn` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=8;
 
 --
+-- AUTO_INCREMENT de la tabla `asignaciones`
+--
+ALTER TABLE `asignaciones`
+  MODIFY `idasignatura` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
+
+--
+-- AUTO_INCREMENT de la tabla `calificaciones`
+--
+ALTER TABLE `calificaciones`
+  MODIFY `id_calif` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
+
+--
 -- AUTO_INCREMENT de la tabla `grupos`
 --
 ALTER TABLE `grupos`
   MODIFY `idgrupo` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
 
 --
+-- AUTO_INCREMENT de la tabla `grupo_alumnos`
+--
+ALTER TABLE `grupo_alumnos`
+  MODIFY `id_ga` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
+
+--
 -- AUTO_INCREMENT de la tabla `materias`
 --
 ALTER TABLE `materias`
-  MODIFY `idmat` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
+  MODIFY `idmat` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=8;
 COMMIT;
 
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
