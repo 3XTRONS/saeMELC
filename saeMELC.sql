@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Servidor: 127.0.0.1
--- Tiempo de generación: 20-10-2026 a las 13:59:01
+-- Tiempo de generación: 26-10-2026 a las 22:32:06
 -- Versión del servidor: 10.4.32-MariaDB
 -- Versión de PHP: 8.2.12
 
@@ -22,7 +22,13 @@ SET time_zone = "+00:00";
 --
 
 -- --------------------------------------------------------
+CREATE DATABASE IF NOT EXISTS saeMELC
 
+    CHARACTER SET utf8mb4
+
+    COLLATE utf8mb4_spanish_ci;
+
+USE saeMELC;
 --
 -- Estructura de tabla para la tabla `alumnos`
 --
@@ -65,7 +71,8 @@ CREATE TABLE `asignaciones` (
 --
 
 INSERT INTO `asignaciones` (`idasignatura`, `idmat`, `idalumn`, `idprof`) VALUES
-(1, 2, 3, 1);
+(1, 2, 3, 1),
+(2, 1, 1, 2);
 
 -- --------------------------------------------------------
 
@@ -85,7 +92,15 @@ CREATE TABLE `calificaciones` (
 --
 
 INSERT INTO `calificaciones` (`id_calif`, `idalumn`, `id_unidad`, `calificacion`) VALUES
-(1, 1, 1, 10.00);
+(1, 1, 1, 10.00),
+(2, 3, 1, 9.00),
+(3, 4, 1, 10.00),
+(4, 1, 2, 9.00),
+(5, 3, 2, 9.00),
+(6, 4, 2, 8.00),
+(7, 1, 10, 9.00),
+(8, 3, 10, 9.00),
+(9, 4, 10, 9.00);
 
 -- --------------------------------------------------------
 
@@ -128,7 +143,8 @@ CREATE TABLE `grupo_alumnos` (
 --
 
 INSERT INTO `grupo_alumnos` (`id_ga`, `idgrupo`, `idalumn`, `estatus`) VALUES
-(1, 1, 1, 'ALTA');
+(1, 1, 1, 'ALTA'),
+(2, 1, 3, 'ALTA');
 
 -- --------------------------------------------------------
 
@@ -244,13 +260,13 @@ ALTER TABLE `alumnos`
 -- AUTO_INCREMENT de la tabla `asignaciones`
 --
 ALTER TABLE `asignaciones`
-  MODIFY `idasignatura` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
+  MODIFY `idasignatura` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
 
 --
 -- AUTO_INCREMENT de la tabla `calificaciones`
 --
 ALTER TABLE `calificaciones`
-  MODIFY `id_calif` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
+  MODIFY `id_calif` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=10;
 
 --
 -- AUTO_INCREMENT de la tabla `grupos`
@@ -262,7 +278,7 @@ ALTER TABLE `grupos`
 -- AUTO_INCREMENT de la tabla `grupo_alumnos`
 --
 ALTER TABLE `grupo_alumnos`
-  MODIFY `id_ga` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
+  MODIFY `id_ga` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
 
 --
 -- AUTO_INCREMENT de la tabla `materias`
