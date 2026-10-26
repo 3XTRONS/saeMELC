@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Servidor: 127.0.0.1
--- Tiempo de generación: 26-10-2026 a las 22:32:06
+-- Tiempo de generación: 26-10-2026 a las 23:36:54
 -- Versión del servidor: 10.4.32-MariaDB
 -- Versión de PHP: 8.2.12
 
@@ -51,7 +51,10 @@ INSERT INTO `alumnos` (`idalumn`, `matricula_al`, `nombre_al`, `apaterno_al`, `a
 (1, '6666', 'Ashley', 'Graves', 'G', 'hermanoslocos@gmail.com', 'ALTA'),
 (3, '6667', 'Andrew', 'Graves', 'G', 'hermanoslocos@gmail.com', 'ALTA'),
 (4, '1234', 'Lilith', 'Fuentes', 'Perez', 'algunalumna@gmail.com', 'ALTA'),
-(5, '0000', 'Prueba', 'Reprobado', 'jiji', 'todonoob@gmail.com', 'BAJA');
+(5, '0000', 'Prueba', 'Reprobado', 'jiji', 'todonoob@gmail.com', 'BAJA'),
+(8, '1247', 'Lynette', 'Scavo', '.', 'Scavo@gmail.com', 'ALTA'),
+(9, 'Cortes', 'Martin', 'Emmanuel', 'Lopez', 'algunalumno@gmail.com', 'ALTA'),
+(10, '9238', 'Rocio', 'Cornejo', 'Esquivel', 'Rox@gmail.com', 'ALTA');
 
 -- --------------------------------------------------------
 
@@ -71,8 +74,10 @@ CREATE TABLE `asignaciones` (
 --
 
 INSERT INTO `asignaciones` (`idasignatura`, `idmat`, `idalumn`, `idprof`) VALUES
-(1, 2, 3, 1),
-(2, 1, 1, 2);
+(2, 1, 1, 2),
+(3, 2, 3, 1),
+(4, 2, 1, 2),
+(6, 4, 10, 5);
 
 -- --------------------------------------------------------
 
@@ -100,7 +105,17 @@ INSERT INTO `calificaciones` (`id_calif`, `idalumn`, `id_unidad`, `calificacion`
 (6, 4, 2, 8.00),
 (7, 1, 10, 9.00),
 (8, 3, 10, 9.00),
-(9, 4, 10, 9.00);
+(9, 4, 10, 9.00),
+(10, 1, 1, 9.00),
+(11, 8, 1, 9.00),
+(12, 9, 1, 8.00),
+(13, 10, 1, 10.00),
+(14, 8, 2, 9.00),
+(15, 9, 2, 9.00),
+(16, 10, 2, 10.00),
+(17, 8, 10, 9.00),
+(18, 9, 10, 9.00),
+(19, 10, 10, 10.00);
 
 -- --------------------------------------------------------
 
@@ -122,8 +137,11 @@ CREATE TABLE `grupos` (
 INSERT INTO `grupos` (`idgrupo`, `clave_grupo`, `nombre_grupo`, `estatus_grupo`) VALUES
 (1, '406', '4° Semestre Tecnologías de la Información', 'ALTA'),
 (2, '101', '1° Semestre Tecnologías de la Información', 'ALTA'),
-(3, '407', '7° Semestre Tecnologías de la Información.', 'BAJA'),
-(4, '102', '2° Semestre Tecnologías de la Información', 'ALTA');
+(3, '407', '4° Semestre Tecnologías de la Información.', 'ALTA'),
+(4, '202', '2° Semestre Tecnologías de la Información', 'ALTA'),
+(5, '501', '5° Semestre Tecnologías de la Información', 'ALTA'),
+(6, '601', '6° Semestre Tecnologías de la Información', 'ALTA'),
+(7, '501', '5° Semestre Tecnologías de la Información', 'ALTA');
 
 -- --------------------------------------------------------
 
@@ -144,7 +162,8 @@ CREATE TABLE `grupo_alumnos` (
 
 INSERT INTO `grupo_alumnos` (`id_ga`, `idgrupo`, `idalumn`, `estatus`) VALUES
 (1, 1, 1, 'ALTA'),
-(2, 1, 3, 'ALTA');
+(2, 1, 3, 'ALTA'),
+(3, 1, 10, 'ALTA');
 
 -- --------------------------------------------------------
 
@@ -198,7 +217,8 @@ INSERT INTO `profesores` (`idprof`, `nombre_prof`, `apaterno_prof`, `amaterno_pr
 (2, 'Chris', 'Prince', 'NEO', 'algunprofeNEO@gmail.com', 'ALTA'),
 (3, 'Carlos', 'Mendoza', 'Ramirez', 'algunprofe@gmail.com', 'ALTA'),
 (4, 'Anri', 'Teieri', 'Teieri', 'Teieri@gmail.com', 'ALTA'),
-(5, 'Leonardo', 'Luna', 'NEO', 'algunprofeNEO2@gmail.com', 'ALTA');
+(5, 'Leonardo', 'Luna', 'NEO', 'algunprofeNEO2@gmail.com', 'ALTA'),
+(6, 'Gabrielle', 'Solis', '.', 'Solis@gmail.com', 'ALTA');
 
 --
 -- Índices para tablas volcadas
@@ -254,31 +274,31 @@ ALTER TABLE `profesores`
 -- AUTO_INCREMENT de la tabla `alumnos`
 --
 ALTER TABLE `alumnos`
-  MODIFY `idalumn` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=8;
+  MODIFY `idalumn` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=11;
 
 --
 -- AUTO_INCREMENT de la tabla `asignaciones`
 --
 ALTER TABLE `asignaciones`
-  MODIFY `idasignatura` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
+  MODIFY `idasignatura` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=7;
 
 --
 -- AUTO_INCREMENT de la tabla `calificaciones`
 --
 ALTER TABLE `calificaciones`
-  MODIFY `id_calif` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=10;
+  MODIFY `id_calif` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=20;
 
 --
 -- AUTO_INCREMENT de la tabla `grupos`
 --
 ALTER TABLE `grupos`
-  MODIFY `idgrupo` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
+  MODIFY `idgrupo` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=8;
 
 --
 -- AUTO_INCREMENT de la tabla `grupo_alumnos`
 --
 ALTER TABLE `grupo_alumnos`
-  MODIFY `id_ga` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
+  MODIFY `id_ga` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
 
 --
 -- AUTO_INCREMENT de la tabla `materias`
