@@ -21,21 +21,12 @@
         </div>
       </li>
 
-      <!-- PROCESOS -->
+      <!-- PROCESOS (SOLO LAS 3 OPCIONES PEDIDAS POR EL PROFE) -->
       <li class="nav-item dropdown">
         <a class="nav-link dropdown-toggle" href="#" id="navbarDropdownMenuLink2" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
           Procesos
         </a>
         <div class="dropdown-menu" aria-labelledby="navbarDropdownMenuLink2">
-          <!-- Modulos de Registro basico -->
-          <a class="dropdown-item" href="../registro/reg_alumno.php">Registro Alumno</a>
-          <a class="dropdown-item" href="../registro/reg_profesor.php">Registro Profesor</a>
-          <a class="dropdown-item" href="../registro/reg_materia.php">Registro Materia</a>
-          <a class="dropdown-item" href="../registro/reg_grupo.php">Registro Grupo</a>
-          
-          <div class="dropdown-divider"></div>
-          
-          <!-- Nuevos procesos requeridos por el profesor -->
           <a class="dropdown-item" href="../procesos/inscripcion_grupo.php">Inscripción a grupos</a>
           <a class="dropdown-item" href="../procesos/asignacion_materia.php">Asignación de materias</a>
           <a class="dropdown-item" href="../procesos/captura_calificaciones.php">Captura de calificaciones</a>
