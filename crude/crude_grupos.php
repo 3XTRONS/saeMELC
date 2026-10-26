@@ -1,27 +1,23 @@
 <?php
 include_once("../conexion.php");
+include_once("../navegacion/nav.php");
 
-$sql = "SELECT * FROM grupos WHERE estatus_grupo = 'ALTA'";
-$resultado = $conexion->query($sql);
+$grupos = $conexion->query("SELECT * FROM grupos WHERE estatus_grupo = 'ALTA'");
 ?>
 
 <!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Catálogo de Grupos - SAE</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
-    
+    <title>Catálogo de Grupos</title>
     <style>
         body { background-color: #f3f1f4; }
-        .card-custom {
+        .formulario {
             background-color: white;
-            max-width: 1000px;
+            max-width: 900px;
             margin: 30px auto;
             border-radius: 5px;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.15);
+            box-shadow: 0 2px 10px rgba(0,0,0,0.15);
             overflow: hidden;
         }
         .titulo {
@@ -30,16 +26,8 @@ $resultado = $conexion->query($sql);
             padding: 15px;
             text-align: center;
         }
-        .titulo h2 { margin: 0; font-size: 1.8rem; }
+        .titulo h2 { margin: 0; font-size: 1.8rem; font-weight: 500; }
         .contenido { padding: 25px; }
-        .btn-sae {
-            background-color: #9f1239;
-            color: white;
-            border: none;
-            padding: 8px 16px;
-            border-radius: 4px;
-        }
-        .btn-sae:hover { background-color: #881337; color: white; }
         .pie {
             text-align: center;
             padding: 15px;
@@ -51,50 +39,43 @@ $resultado = $conexion->query($sql);
 </head>
 <body>
 
-<?php include_once("../navegacion/nav.php"); ?>
-
 <div class="container">
-    <div class="card-custom">
+    <div class="formulario">
         <div class="titulo">
             <h2>Catálogo de Grupos</h2>
         </div>
 
         <div class="contenido">
-            <div class="d-flex justify-content-between align-items-center mb-4">
-                <a href="../registro/reg_grupo.php" class="btn btn-sae">
-                    <i class="bi bi-people-fill me-1"></i> Registrar nuevo grupo
-                </a>
-                <a href="../registro/reg_grupo.php" class="btn btn-outline-secondary">
-                    <i class="bi bi-arrow-left me-1"></i> Regresar al registro
-                </a>
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <a href="../registro/reg_grupo.php" class="text-dark font-weight-bold">👥 <u>Registrar nuevo grupo</u></a>
+                <a href="../registro/reg_grupo.php" class="btn btn-outline-secondary btn-sm">← Regresar al registro</a>
             </div>
 
             <table class="table table-striped table-hover align-middle">
-                <thead class="table-dark">
+                <thead style="background-color: #212529; color: white;">
                     <tr>
-                        <th scope="col">#</th>
-                        <th scope="col">Clave del Grupo</th>
-                        <th scope="col">Nombre del Grupo / Semestre</th>
-                        <th scope="col" class="text-center">Acciones</th>
+                        <th>#</th>
+                        <th>Clave del Grupo</th>
+                        <th>Nombre del Grupo / Semestre</th>
+                        <th class="text-center">Acciones</th>
                     </tr>
                 </thead>
                 <tbody>
-                    <?php if ($resultado && $resultado->num_rows > 0): ?>
-                        <?php while ($grupo = $resultado->fetch_assoc()): ?>
+                    <?php if ($grupos && $grupos->num_rows > 0): ?>
+                        <?php $i = 1; ?>
+                        <?php while ($row = $grupos->fetch_assoc()): ?>
                             <tr>
-                                <th scope="row"><?php echo $grupo['idgrupo']; ?></th>
-                                <td><?php echo htmlspecialchars($grupo['clave_grupo']); ?></td>
-                                <td><?php echo htmlspecialchars($grupo['nombre_grupo']); ?></td>
+                                <td><b><?php echo $i++; ?></b></td>
+                                <td><?php echo htmlspecialchars($row['clave_grupo']); ?></td>
+                                <td><?php echo htmlspecialchars($row['nombre_grupo']); ?></td>
                                 <td class="text-center">
-                                    <a href="../modificacion/modif_grupo.php?idgrupo=<?php echo $grupo['idgrupo']; ?>" class="btn btn-primary btn-sm" title="Editar"><i class="bi bi-pencil-fill"></i></a>
-                                    <a href="../baja/baja_grupo.php?idgrupo=<?php echo $grupo['idgrupo']; ?>" class="btn btn-danger btn-sm" title="Dar de Baja" onclick="return confirm('¿Seguro que deseas dar de baja este grupo?');"><i class="bi bi-trash-fill"></i></a>
+                                    <a href="../modificacion/modif_grupo.php?id=<?php echo $row['idgrupo']; ?>" class="btn btn-primary btn-sm">✏️</a>
+                                    <a href="../baja/baja_grupo.php?id=<?php echo $row['idgrupo']; ?>" class="btn btn-danger btn-sm" onclick="return confirm('¿Dar de baja grupo?');">🗑️</a>
                                 </td>
                             </tr>
                         <?php endwhile; ?>
                     <?php else: ?>
-                        <tr>
-                            <td colspan="4" class="text-center text-muted">No hay grupos activos registrados.</td>
-                        </tr>
+                        <tr><td colspan="4" class="text-center py-3">No hay grupos activos.</td></tr>
                     <?php endif; ?>
                 </tbody>
             </table>
@@ -106,6 +87,5 @@ $resultado = $conexion->query($sql);
     </div>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>

@@ -1,11 +1,26 @@
 <?php
+include_once("../conexion.php");
+include_once("../navegacion/nav.php");
+
 $mensaje = "";
-if (isset($_GET['status'])) {
-    if ($_GET['status'] == 'success') {
-        $mensaje = '<div class="alert alert-success mt-3">¡Grupo registrado correctamente!</div>';
-    } elseif ($_GET['status'] == 'error') {
-        $msgError = $_GET['msg'] ?? 'Ocurrió un error inesperado.';
-        $mensaje = '<div class="alert alert-danger mt-3">Error al registrar: ' . htmlspecialchars($msgError) . '</div>';
+
+if ($_SERVER["REQUEST_METHOD"] == "POST") {
+    $clave_grupo  = trim($_POST['clave_grupo'] ?? '');
+    $nombre_grupo = trim($_POST['descripcion'] ?? ''); 
+
+    if (!empty($clave_grupo) && !empty($nombre_grupo)) {
+        $stmt = $conexion->prepare("INSERT INTO grupos (clave_grupo, nombre_grupo, estatus_grupo) VALUES (?, ?, 'ALTA')");
+        if ($stmt) {
+            $stmt->bind_param("ss", $clave_grupo, $nombre_grupo);
+            if ($stmt->execute()) {
+                $mensaje = "<div class='alert alert-success mt-3'>¡Grupo registrado correctamente!</div>";
+            } else {
+                $mensaje = "<div class='alert alert-danger mt-3'>Error al registrar: " . htmlspecialchars($stmt->error) . "</div>";
+            }
+            $stmt->close();
+        }
+    } else {
+        $mensaje = "<div class='alert alert-warning mt-3'>Por favor completa la clave y la descripción.</div>";
     }
 }
 ?>
@@ -14,19 +29,15 @@ if (isset($_GET['status'])) {
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Registro de Grupos - SAE</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
-    
+    <title>Registro de Grupos</title>
     <style>
         body { background-color: #f3f1f4; }
         .formulario {
             background-color: white;
-            max-width: 1000px;
-            margin: 30px auto;
+            max-width: 800px;
+            margin: 40px auto;
             border-radius: 5px;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.15);
+            box-shadow: 0 2px 10px rgba(0,0,0,0.15);
             overflow: hidden;
         }
         .titulo {
@@ -35,16 +46,10 @@ if (isset($_GET['status'])) {
             padding: 15px;
             text-align: center;
         }
-        .titulo h2 { margin: 0; font-size: 1.8rem; }
-        .contenido { padding: 25px; }
-        .btn-sae {
-            background-color: #9f1239;
-            color: white;
-            border: none;
-            padding: 8px 16px;
-            border-radius: 4px;
-        }
-        .btn-sae:hover { background-color: #881337; color: white; }
+        .titulo h2 { margin: 0; font-size: 1.8rem; font-weight: 500; }
+        .contenido { padding: 30px; }
+        .btn-custom { background-color: #9f1239; color: white; border: none; padding: 8px 16px; border-radius: 4px; }
+        .btn-custom:hover { background-color: #881337; color: white; }
         .pie {
             text-align: center;
             padding: 15px;
@@ -56,30 +61,28 @@ if (isset($_GET['status'])) {
 </head>
 <body>
 
-<?php include_once("../navegacion/nav.php"); ?>
-
 <div class="container">
     <div class="formulario">
         <div class="titulo">
             <h2>Registro de Grupos</h2>
         </div>
-
+        
         <div class="contenido">
             <?php echo $mensaje; ?>
 
-            <form method="post" action="../procesos/insert_grupo.php">
-                <div class="mb-3">
-                    <label class="form-label">Clave del grupo</label>
-                    <input type="text" name="clave_grupo" class="form-control" required placeholder="Ej. 406">
+            <form method="POST" action="reg_grupo.php">
+                <div class="form-group mb-3">
+                    <label class="font-weight-bold">Clave del grupo</label>
+                    <input type="text" name="clave_grupo" class="form-control" placeholder="Ej. 406" required>
                 </div>
 
-                <div class="mb-3">
-                    <label class="form-label">Descripcion</label>
-                    <input type="text" name="descripcion" class="form-control" required placeholder="desc.">
+                <div class="form-group mb-4">
+                    <label class="font-weight-bold">Descripcion</label>
+                    <input type="text" name="descripcion" class="form-control" placeholder="desc." required>
                 </div>
 
-                <div class="d-flex align-items-center gap-3 mt-4">
-                    <button type="submit" class="btn btn-sae">Registrar grupo</button>
+                <div class="d-flex align-items-center gap-3">
+                    <button type="submit" class="btn btn-custom mr-2">Registrar grupo</button>
                     <a href="../crude/crude_grupos.php" class="btn btn-outline-secondary">Regresar al catálogo</a>
                 </div>
             </form>
@@ -91,6 +94,5 @@ if (isset($_GET['status'])) {
     </div>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
