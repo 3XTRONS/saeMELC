@@ -48,8 +48,9 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['guardar_masivo'])) {
     }
 }
 
-// Consultas
+// Consultas dinámicas
 $alumnos = $conexion->query("SELECT idalumn, matricula_al, nombre_al, apaterno_al, amaterno_al FROM alumnos WHERE estatus_al = 'ALTA'");
+$unidades_db = $conexion->query("SELECT id_unidad, nombre_unidad FROM unidades WHERE estatus_unidad = 'ALTA'");
 
 $alumnos_masivos = null;
 if ($id_unidad_selected > 0) {
@@ -64,6 +65,7 @@ if ($id_unidad_selected > 0) {
 <html lang="es">
 <head>
     <meta charset="UTF-8">
+    <title>Captura de calificaciones</title>
     <style>
         body { background-color: #f3f1f4; }
         .formulario {
@@ -90,6 +92,14 @@ if ($id_unidad_selected > 0) {
             border-radius: 4px;
         }
         .btn-sae:hover { background-color: #881337; color: white; }
+        .btn-excel {
+            background-color: #15803d;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+        }
+        .btn-excel:hover { background-color: #166534; color: white; }
         .pie {
             text-align: center;
             padding: 15px;
@@ -103,6 +113,11 @@ if ($id_unidad_selected > 0) {
             border-bottom: 3px solid #172554 !important;
         }
         .nav-tabs .nav-link { color: #555; }
+
+        @media print {
+            nav, .navbar, .btn, form:not(#formTabla), .pie, .no-print, .nav-tabs { display: none !important; }
+            .formulario { box-shadow: none; margin: 0; max-width: 100%; }
+        }
     </style>
 </head>
 <body>
@@ -115,7 +130,7 @@ if ($id_unidad_selected > 0) {
 
         <div class="contenido">
             <!-- PESTAÑAS INDIVIDUAL / MASIVA -->
-            <ul class="nav nav-tabs mb-4">
+            <ul class="nav nav-tabs mb-4 no-print">
                 <li class="nav-item">
                     <a class="nav-link <?php echo ($tab == 'individual') ? 'active' : ''; ?>" href="captura_calificaciones.php?tab=individual">Individual</a>
                 </li>
@@ -149,9 +164,13 @@ if ($id_unidad_selected > 0) {
                             <label class="form-label font-weight-bold">Id unidad</label>
                             <select name="id_unidad" class="form-control" required>
                                 <option value="">Selecciona una unidad...</option>
-                                <option value="1">1 - Unidad 1 - Parcial 1</option>
-                                <option value="2">2 - Unidad 2 - Parcial 2</option>
-                                <option value="10">3 - Unidad 3 - Proyecto final</option>
+                                <?php if ($unidades_db): ?>
+                                    <?php while($u = $unidades_db->fetch_assoc()): ?>
+                                        <option value="<?php echo $u['id_unidad']; ?>">
+                                            <?php echo htmlspecialchars($u['id_unidad'] . ' - ' . $u['nombre_unidad']); ?>
+                                        </option>
+                                    <?php endwhile; ?>
+                                <?php endif; ?>
                             </select>
                         </div>
 
@@ -168,16 +187,24 @@ if ($id_unidad_selected > 0) {
 
             <!-- VISTA MASIVA -->
             <?php else: ?>
-                <form method="get" action="captura_calificaciones.php">
+                <form method="get" action="captura_calificaciones.php" class="no-print">
                     <input type="hidden" name="tab" value="masiva">
                     <div class="row align-items-end mb-4">
                         <div class="col-md-9 mb-2">
                             <label class="form-label font-weight-bold">Id unidad</label>
                             <select name="id_unidad" class="form-control" required>
                                 <option value="">Selecciona una unidad...</option>
-                                <option value="1" <?php echo ($id_unidad_selected == 1) ? 'selected' : ''; ?>>1 - Unidad 1 - Parcial 1</option>
-                                <option value="2" <?php echo ($id_unidad_selected == 2) ? 'selected' : ''; ?>>2 - Unidad 2 - Parcial 2</option>
-                                <option value="10" <?php echo ($id_unidad_selected == 10) ? 'selected' : ''; ?>>3 - Unidad 3 - Proyecto final</option>
+                                <?php 
+                                // Reiniciar puntero de consulta para volver a iterar
+                                if ($unidades_db) $unidades_db->data_seek(0);
+                                ?>
+                                <?php if ($unidades_db): ?>
+                                    <?php while($u = $unidades_db->fetch_assoc()): ?>
+                                        <option value="<?php echo $u['id_unidad']; ?>" <?php echo ($id_unidad_selected == $u['id_unidad']) ? 'selected' : ''; ?>>
+                                            <?php echo htmlspecialchars($u['id_unidad'] . ' - ' . $u['nombre_unidad']); ?>
+                                        </option>
+                                    <?php endwhile; ?>
+                                <?php endif; ?>
                             </select>
                         </div>
                         <div class="col-md-3 mb-2">
@@ -187,12 +214,25 @@ if ($id_unidad_selected > 0) {
                 </form>
 
                 <?php if ($id_unidad_selected > 0 && $alumnos_masivos): ?>
-                    <form method="post" action="captura_calificaciones.php?tab=masiva&id_unidad=<?php echo $id_unidad_selected; ?>">
+                    <form method="post" id="formTabla" action="captura_calificaciones.php?tab=masiva&id_unidad=<?php echo $id_unidad_selected; ?>">
                         <input type="hidden" name="guardar_masivo" value="1">
                         <input type="hidden" name="id_unidad" value="<?php echo $id_unidad_selected; ?>">
 
+                        <!-- Botones de Acción: Guardar, Imprimir y Excel -->
+                        <div class="d-flex justify-content-between align-items-center mb-3 no-print">
+                            <button type="submit" class="btn btn-sae">Guardar Calificaciones</button>
+                            <div>
+                                <button type="button" onclick="window.print();" class="btn btn-outline-dark mr-2">
+                                    🖨️ Imprimir / PDF
+                                </button>
+                                <button type="button" onclick="exportarExcel();" class="btn btn-excel">
+                                    📊 Exportar a Excel
+                                </button>
+                            </div>
+                        </div>
+
                         <div class="table-responsive">
-                            <table class="table table-bordered table-striped align-middle">
+                            <table id="tablaCalificaciones" class="table table-bordered table-striped align-middle">
                                 <thead style="background-color: #212529; color: white;">
                                     <tr>
                                         <th>Id alumno</th>
@@ -219,8 +259,6 @@ if ($id_unidad_selected > 0) {
                                 </tbody>
                             </table>
                         </div>
-
-                        <button type="submit" class="btn btn-sae mt-2">Guardar Calificaciones</button>
                     </form>
                 <?php endif; ?>
             <?php endif; ?>
@@ -231,6 +269,22 @@ if ($id_unidad_selected > 0) {
         </div>
     </div>
 </div>
+
+<script>
+function exportarExcel() {
+    var tabla = document.getElementById("tablaCalificaciones");
+    if (!tabla) return;
+    var html = tabla.outerHTML;
+    var blob = new Blob(['\ufeff' + html], { type: 'application/vnd.ms-excel' });
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement("a");
+    a.href = url;
+    a.download = "Calificaciones_Masivas_Unidad_<?php echo $id_unidad_selected; ?>.xls";
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+}
+</script>
 
 </body>
 </html>
