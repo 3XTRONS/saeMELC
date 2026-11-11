@@ -8,7 +8,7 @@
   <div class="collapse navbar-collapse" id="navbarNavDropdown">
     <ul class="navbar-nav">
       
-      <!-- REGISTROS / CATÁLOGOS -->
+      <!-- REGISTROS -->
       <li class="nav-item dropdown">
         <a class="nav-link dropdown-toggle" href="#" id="navbarDropdownMenuLink" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
           Registros
@@ -22,7 +22,7 @@
         </div>
       </li>
 
-      <!-- PROCESOS (SOLO LAS 3 OPCIONES PEDIDAS POR EL PROFE) -->
+      <!-- PROCESOS -->
       <li class="nav-item dropdown">
         <a class="nav-link dropdown-toggle" href="#" id="navbarDropdownMenuLink2" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
           Procesos
@@ -34,13 +34,16 @@
         </div>
       </li>
 
-      <!-- REPORTES -->
+      <!-- REPORTES pros -->
       <li class="nav-item dropdown">
         <a class="nav-link dropdown-toggle" href="#" id="navbarDropdownMenuLink3" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
           Reportes
         </a>
         <div class="dropdown-menu" aria-labelledby="navbarDropdownMenuLink3">
-          <a class="dropdown-item" href="../reportes/rep_general.php">Reporte General</a>
+          <a class="dropdown-item" href="../reportes/rep_alumnos_grupo.php">Alumnos por grupo</a>
+          <a class="dropdown-item" href="../reportes/rep_materias_alumno.php">Materias por alumno</a>
+          <a class="dropdown-item" href="../reportes/rep_calificaciones.php">Calificaciones por materia y grupo</a>
+          <a class="dropdown-item" href="../reportes/rep_boleta.php">Boleta de calificaciones</a>
         </div>
       </li>
 
