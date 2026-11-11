@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Servidor: 127.0.0.1
--- Tiempo de generación: 26-10-2026 a las 23:36:54
+-- Tiempo de generación: 11-11-2026 a las 23:59:48
 -- Versión del servidor: 10.4.32-MariaDB
 -- Versión de PHP: 8.2.12
 
@@ -22,13 +22,7 @@ SET time_zone = "+00:00";
 --
 
 -- --------------------------------------------------------
-CREATE DATABASE IF NOT EXISTS saeMELC
 
-    CHARACTER SET utf8mb4
-
-    COLLATE utf8mb4_spanish_ci;
-
-USE saeMELC;
 --
 -- Estructura de tabla para la tabla `alumnos`
 --
@@ -115,7 +109,12 @@ INSERT INTO `calificaciones` (`id_calif`, `idalumn`, `id_unidad`, `calificacion`
 (16, 10, 2, 10.00),
 (17, 8, 10, 9.00),
 (18, 9, 10, 9.00),
-(19, 10, 10, 10.00);
+(19, 10, 10, 10.00),
+(20, 1, 2, 7.00),
+(21, 3, 2, 8.00),
+(22, 1, 1, 6.00),
+(23, 3, 1, 9.00),
+(24, 4, 1, 8.00);
 
 -- --------------------------------------------------------
 
@@ -220,6 +219,28 @@ INSERT INTO `profesores` (`idprof`, `nombre_prof`, `apaterno_prof`, `amaterno_pr
 (5, 'Leonardo', 'Luna', 'NEO', 'algunprofeNEO2@gmail.com', 'ALTA'),
 (6, 'Gabrielle', 'Solis', '.', 'Solis@gmail.com', 'ALTA');
 
+-- --------------------------------------------------------
+
+--
+-- Estructura de tabla para la tabla `unidades`
+--
+
+CREATE TABLE `unidades` (
+  `id_unidad` int(11) NOT NULL,
+  `nombre_unidad` varchar(100) NOT NULL,
+  `estatus_unidad` varchar(10) DEFAULT 'ALTA'
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Volcado de datos para la tabla `unidades`
+--
+
+INSERT INTO `unidades` (`id_unidad`, `nombre_unidad`, `estatus_unidad`) VALUES
+(1, 'Unidad 1 - Parcial 1', 'ALTA'),
+(2, 'Unidad 2 - Parcial 2', 'ALTA'),
+(3, 'Unidad 3 - Parcial 3', 'ALTA'),
+(4, 'Unidad Especial - Recurses', 'ALTA');
+
 --
 -- Índices para tablas volcadas
 --
@@ -267,6 +288,12 @@ ALTER TABLE `profesores`
   ADD PRIMARY KEY (`idprof`);
 
 --
+-- Indices de la tabla `unidades`
+--
+ALTER TABLE `unidades`
+  ADD PRIMARY KEY (`id_unidad`);
+
+--
 -- AUTO_INCREMENT de las tablas volcadas
 --
 
@@ -286,7 +313,7 @@ ALTER TABLE `asignaciones`
 -- AUTO_INCREMENT de la tabla `calificaciones`
 --
 ALTER TABLE `calificaciones`
-  MODIFY `id_calif` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=20;
+  MODIFY `id_calif` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=25;
 
 --
 -- AUTO_INCREMENT de la tabla `grupos`
@@ -305,6 +332,12 @@ ALTER TABLE `grupo_alumnos`
 --
 ALTER TABLE `materias`
   MODIFY `idmat` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=8;
+
+--
+-- AUTO_INCREMENT de la tabla `unidades`
+--
+ALTER TABLE `unidades`
+  MODIFY `id_unidad` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
 COMMIT;
 
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
