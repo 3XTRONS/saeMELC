@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Servidor: 127.0.0.1
--- Tiempo de generación: 11-11-2026 a las 23:59:48
+-- Tiempo de generación: 12-11-2026 a las 21:00:14
 -- Versión del servidor: 10.4.32-MariaDB
 -- Versión de PHP: 8.2.12
 
@@ -222,6 +222,29 @@ INSERT INTO `profesores` (`idprof`, `nombre_prof`, `apaterno_prof`, `amaterno_pr
 -- --------------------------------------------------------
 
 --
+-- Estructura de tabla para la tabla `puestos`
+--
+
+CREATE TABLE `puestos` (
+  `id_puesto` int(11) NOT NULL,
+  `nombre_puesto` varchar(100) NOT NULL,
+  `estatus_puesto` varchar(10) DEFAULT 'ALTA'
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Volcado de datos para la tabla `puestos`
+--
+
+INSERT INTO `puestos` (`id_puesto`, `nombre_puesto`, `estatus_puesto`) VALUES
+(1, 'Administrador', 'ALTA'),
+(2, 'Docentes', 'ALTA'),
+(3, 'Coordinador', 'ALTA'),
+(4, 'Juaker', 'ALTA'),
+(5, 'Hacker', 'BAJA');
+
+-- --------------------------------------------------------
+
+--
 -- Estructura de tabla para la tabla `unidades`
 --
 
@@ -240,6 +263,29 @@ INSERT INTO `unidades` (`id_unidad`, `nombre_unidad`, `estatus_unidad`) VALUES
 (2, 'Unidad 2 - Parcial 2', 'ALTA'),
 (3, 'Unidad 3 - Parcial 3', 'ALTA'),
 (4, 'Unidad Especial - Recurses', 'ALTA');
+
+-- --------------------------------------------------------
+
+--
+-- Estructura de tabla para la tabla `usuarios`
+--
+
+CREATE TABLE `usuarios` (
+  `id_usuario` int(11) NOT NULL,
+  `nombre_usuario` varchar(100) NOT NULL,
+  `username` varchar(50) NOT NULL,
+  `password` varchar(255) NOT NULL,
+  `id_puesto` int(11) NOT NULL,
+  `estatus_usuario` varchar(10) DEFAULT 'ALTA'
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Volcado de datos para la tabla `usuarios`
+--
+
+INSERT INTO `usuarios` (`id_usuario`, `nombre_usuario`, `username`, `password`, `id_puesto`, `estatus_usuario`) VALUES
+(1, 'Lopez Cornejo Martin Emmanuel', 'Fazt.admin', '8cb2237d0679ca88db6464eac60da96345513964', 1, 'ALTA'),
+(2, 'SoyunHacker', 'anonimus', '4730597b005e8149bf3edf3b469a94e4dcb02c24', 4, 'ALTA');
 
 --
 -- Índices para tablas volcadas
@@ -288,10 +334,23 @@ ALTER TABLE `profesores`
   ADD PRIMARY KEY (`idprof`);
 
 --
+-- Indices de la tabla `puestos`
+--
+ALTER TABLE `puestos`
+  ADD PRIMARY KEY (`id_puesto`);
+
+--
 -- Indices de la tabla `unidades`
 --
 ALTER TABLE `unidades`
   ADD PRIMARY KEY (`id_unidad`);
+
+--
+-- Indices de la tabla `usuarios`
+--
+ALTER TABLE `usuarios`
+  ADD PRIMARY KEY (`id_usuario`),
+  ADD UNIQUE KEY `username` (`username`);
 
 --
 -- AUTO_INCREMENT de las tablas volcadas
@@ -334,10 +393,22 @@ ALTER TABLE `materias`
   MODIFY `idmat` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=8;
 
 --
+-- AUTO_INCREMENT de la tabla `puestos`
+--
+ALTER TABLE `puestos`
+  MODIFY `id_puesto` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=6;
+
+--
 -- AUTO_INCREMENT de la tabla `unidades`
 --
 ALTER TABLE `unidades`
   MODIFY `id_unidad` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
+
+--
+-- AUTO_INCREMENT de la tabla `usuarios`
+--
+ALTER TABLE `usuarios`
+  MODIFY `id_usuario` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=6;
 COMMIT;
 
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;

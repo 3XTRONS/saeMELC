@@ -1,7 +1,7 @@
 <?php include_once("header.php"); ?>
 
 <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
-  <a class="navbar-brand" href="#">SAE</a>
+  <a class="navbar-brand" href="nav.php">SAE</a>
   <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNavDropdown" aria-controls="navbarNavDropdown" aria-expanded="false" aria-label="Toggle navigation">
     <span class="navbar-toggler-icon"></span>
   </button>
@@ -18,7 +18,9 @@
           <a class="dropdown-item" href="../crude/crude_profesores.php">Profesores</a>
           <a class="dropdown-item" href="../crude/crude_materias.php">Materias</a>
           <a class="dropdown-item" href="../crude/crude_grupos.php">Grupos</a>
-          <a class="dropdown-item" href="../crude/crude_unidades.php">Unidades</a>
+          <div class="dropdown-divider"></div>
+          <a class="dropdown-item" href="../crude/crude_puestos.php">Puestos</a>
+          <a class="dropdown-item" href="../crude/crude_usuarios.php">Usuarios</a>
         </div>
       </li>
 
@@ -34,7 +36,7 @@
         </div>
       </li>
 
-      <!-- REPORTES pros -->
+      <!-- REPORTES -->
       <li class="nav-item dropdown">
         <a class="nav-link dropdown-toggle" href="#" id="navbarDropdownMenuLink3" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
           Reportes
