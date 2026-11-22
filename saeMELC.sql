@@ -1,11 +1,11 @@
 -- phpMyAdmin SQL Dump
--- version 5.2.1
+-- version 5.2.3
 -- https://www.phpmyadmin.net/
 --
 -- Servidor: 127.0.0.1
--- Tiempo de generación: 12-11-2026 a las 21:00:14
--- Versión del servidor: 10.4.32-MariaDB
--- Versión de PHP: 8.2.12
+-- Tiempo de generación: 23-11-2026 a las 00:23:42
+-- Versión del servidor: 10.11.16-MariaDB
+-- Versión de PHP: 8.3.36
 
 SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
 START TRANSACTION;
@@ -18,7 +18,7 @@ SET time_zone = "+00:00";
 /*!40101 SET NAMES utf8mb4 */;
 
 --
--- Base de datos: `saeMELC`
+-- Base de datos: `saemelc`
 --
 
 -- --------------------------------------------------------
@@ -239,7 +239,7 @@ INSERT INTO `puestos` (`id_puesto`, `nombre_puesto`, `estatus_puesto`) VALUES
 (1, 'Administrador', 'ALTA'),
 (2, 'Docentes', 'ALTA'),
 (3, 'Coordinador', 'ALTA'),
-(4, 'Juaker', 'ALTA'),
+(4, 'Alumno', 'BAJA'),
 (5, 'Hacker', 'BAJA');
 
 -- --------------------------------------------------------
@@ -276,6 +276,7 @@ CREATE TABLE `usuarios` (
   `username` varchar(50) NOT NULL,
   `password` varchar(255) NOT NULL,
   `id_puesto` int(11) NOT NULL,
+  `idalumn` int(11) DEFAULT NULL,
   `estatus_usuario` varchar(10) DEFAULT 'ALTA'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
@@ -283,9 +284,10 @@ CREATE TABLE `usuarios` (
 -- Volcado de datos para la tabla `usuarios`
 --
 
-INSERT INTO `usuarios` (`id_usuario`, `nombre_usuario`, `username`, `password`, `id_puesto`, `estatus_usuario`) VALUES
-(1, 'Lopez Cornejo Martin Emmanuel', 'Fazt.admin', '8cb2237d0679ca88db6464eac60da96345513964', 1, 'ALTA'),
-(2, 'SoyunHacker', 'anonimus', '4730597b005e8149bf3edf3b469a94e4dcb02c24', 4, 'ALTA');
+INSERT INTO `usuarios` (`id_usuario`, `nombre_usuario`, `username`, `password`, `id_puesto`, `idalumn`, `estatus_usuario`) VALUES
+(1, 'Lopez Cornejo Martin Emmanuel', 'Fazt.admin', '8cb2237d0679ca88db6464eac60da96345513964', 1, NULL, 'ALTA'),
+(2, 'Profe Garcia', 'profe.garcia', '8cb2237d0679ca88db6464eac60da96345513964', 2, NULL, 'ALTA'),
+(3, 'Ashley Graves', 'ashley.alumno', '8cb2237d0679ca88db6464eac60da96345513964', 4, 1, 'ALTA');
 
 --
 -- Índices para tablas volcadas
@@ -408,7 +410,7 @@ ALTER TABLE `unidades`
 -- AUTO_INCREMENT de la tabla `usuarios`
 --
 ALTER TABLE `usuarios`
-  MODIFY `id_usuario` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=6;
+  MODIFY `id_usuario` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=8;
 COMMIT;
 
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
