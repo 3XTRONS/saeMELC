@@ -2,7 +2,23 @@
 include_once("../conexion.php");
 include_once("../navegacion/nav.php");
 
-$idalumn = intval($_GET['idalumn'] ?? 0);
+$rol = (int)($_SESSION['id_puesto'] ?? 1);
+
+// Si es Alumno (puesto 4 o superior distinto de Admin/Docente/Coordinador), solo puede ver su propia boleta
+if ($rol >= 4) {
+    if (!empty($_SESSION['idalumn'])) {
+        $idalumn = intval($_SESSION['idalumn']);
+    } else {
+        // Si no existe columna idalumn en usuarios, busca su ID en alumnos por su nombre de usuario
+        $nombre_sesion = $conexion->real_escape_string($_SESSION['nombre_usuario'] ?? '');
+        $busca = $conexion->query("SELECT idalumn FROM alumnos WHERE CONCAT(nombre_al, ' ', apaterno_al, ' ', amaterno_al) LIKE '%$nombre_sesion%' LIMIT 1");
+        $row_al = ($busca) ? $busca->fetch_assoc() : null;
+        $idalumn = intval($row_al['idalumn'] ?? 0);
+    }
+} else {
+    $idalumn = intval($_GET['idalumn'] ?? 0);
+}
+
 $alumnos_select = $conexion->query("SELECT idalumn, matricula_al, CONCAT(nombre_al, ' ', apaterno_al, ' ', amaterno_al) AS alumno FROM alumnos WHERE estatus_al = 'ALTA'");
 $boleta = null;
 $promedio = 0;
@@ -11,7 +27,8 @@ if ($idalumn > 0) {
     $sql = "SELECT u.nombre_unidad, c.calificacion
             FROM calificaciones c
             INNER JOIN unidades u ON c.id_unidad = u.id_unidad
-            WHERE c.idalumn = $idalumn";
+            WHERE c.idalumn = $idalumn
+            ORDER BY u.id_unidad";
     $boleta = $conexion->query($sql);
     
     $prom = $conexion->query("SELECT AVG(calificacion) as promedio FROM calificaciones WHERE idalumn = $idalumn");
@@ -42,6 +59,7 @@ if ($idalumn > 0) {
     <div class="formulario">
         <div class="titulo"><h2 class="m-0">Boleta de Calificaciones</h2></div>
         <div class="contenido">
+            <?php if ($rol < 4): ?>
             <form method="GET" action="rep_boleta.php" class="row align-items-end mb-4 no-print">
                 <div class="col-md-9 mb-2">
                     <label class="font-weight-bold">Selecciona Alumno</label>
@@ -60,6 +78,7 @@ if ($idalumn > 0) {
                     <button type="submit" class="btn btn-secondary w-100">Generar Boleta</button>
                 </div>
             </form>
+            <?php endif; ?>
 
             <?php if ($idalumn > 0): ?>
                 <div class="d-flex justify-content-end mb-3 no-print">
@@ -92,6 +111,8 @@ if ($idalumn > 0) {
                         </tbody>
                     </table>
                 </div>
+            <?php else: ?>
+                <div class="alert alert-warning text-center">No se encontró un historial de alumno vinculado a esta cuenta.</div>
             <?php endif; ?>
         </div>
         <div class="pie">Boleta escolar - Emmanuel Lopez Cornejo</div>
