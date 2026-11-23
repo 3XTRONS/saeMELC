@@ -35,6 +35,7 @@ include_once("header.php");
           <?php if ($rol === 1): ?>
             <a class="dropdown-item" href="../crude/crude_profesores.php">Profesores</a>
             <a class="dropdown-item" href="../crude/crude_materias.php">Materias</a>
+            <a class="dropdown-item" href="../crude/crude_unidades.php">Unidades</a>
             <div class="dropdown-divider"></div>
             <a class="dropdown-item" href="../crude/crude_puestos.php">Puestos</a>
             <a class="dropdown-item" href="../crude/crude_usuarios.php">Usuarios</a>
