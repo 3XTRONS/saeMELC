@@ -1,13 +1,13 @@
 <?php
-$host = "localhost";
+$servidor = "localhost";
 $usuario = "root";
-$contrasenia = "";
-$base_de_datos = "saeMELC";
+$password = "";
+$base_datos = "saeMELC";
 
-$conexion = new mysqli($host, $usuario, $contrasenia, $base_de_datos);
+$conexion = new mysqli($servidor, $usuario, $password, $base_datos);
 
 if ($conexion->connect_error) {
-    die("Error de conexión: " . $conexion->connect_error);
+    die("Error de conexion: " . $conexion->connect_error);
 }
 
 $conexion->set_charset("utf8mb4");

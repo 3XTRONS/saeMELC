@@ -1,31 +1,25 @@
--- phpMyAdmin SQL Dump
--- version 5.2.3
--- https://www.phpmyadmin.net/
---
--- Servidor: 127.0.0.1
--- Tiempo de generación: 23-11-2026 a las 00:23:42
--- Versión del servidor: 10.11.16-MariaDB
--- Versión de PHP: 8.3.36
-
 SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
 START TRANSACTION;
 SET time_zone = "+00:00";
-
 
 /*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
 /*!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS */;
 /*!40101 SET @OLD_COLLATION_CONNECTION=@@COLLATION_CONNECTION */;
 /*!40101 SET NAMES utf8mb4 */;
 
---
--- Base de datos: `saemelc`
---
+CREATE DATABASE IF NOT EXISTS saemelc CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci;
+USE saemelc;
 
--- --------------------------------------------------------
-
---
--- Estructura de tabla para la tabla `alumnos`
---
+DROP TABLE IF EXISTS calificaciones;
+DROP TABLE IF EXISTS asignaciones;
+DROP TABLE IF EXISTS grupo_alumnos;
+DROP TABLE IF EXISTS usuarios;
+DROP TABLE IF EXISTS puestos;
+DROP TABLE IF EXISTS unidades;
+DROP TABLE IF EXISTS grupos;
+DROP TABLE IF EXISTS materias;
+DROP TABLE IF EXISTS profesores;
+DROP TABLE IF EXISTS alumnos;
 
 CREATE TABLE `alumnos` (
   `idalumn` int(11) NOT NULL,
@@ -37,10 +31,6 @@ CREATE TABLE `alumnos` (
   `estatus_al` varchar(10) DEFAULT 'ALTA'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
---
--- Volcado de datos para la tabla `alumnos`
---
-
 INSERT INTO `alumnos` (`idalumn`, `matricula_al`, `nombre_al`, `apaterno_al`, `amaterno_al`, `mail_al`, `estatus_al`) VALUES
 (1, '6666', 'Ashley', 'Graves', 'G', 'hermanoslocos@gmail.com', 'ALTA'),
 (3, '6667', 'Andrew', 'Graves', 'G', 'hermanoslocos@gmail.com', 'ALTA'),
@@ -48,13 +38,8 @@ INSERT INTO `alumnos` (`idalumn`, `matricula_al`, `nombre_al`, `apaterno_al`, `a
 (5, '0000', 'Prueba', 'Reprobado', 'jiji', 'todonoob@gmail.com', 'BAJA'),
 (8, '1247', 'Lynette', 'Scavo', '.', 'Scavo@gmail.com', 'ALTA'),
 (9, 'Cortes', 'Martin', 'Emmanuel', 'Lopez', 'algunalumno@gmail.com', 'ALTA'),
-(10, '9238', 'Rocio', 'Cornejo', 'Esquivel', 'Rox@gmail.com', 'ALTA');
-
--- --------------------------------------------------------
-
---
--- Estructura de tabla para la tabla `asignaciones`
---
+(10, '9238', 'Rocio', 'Cornejo', 'Esquivel', 'Rox@gmail.com', 'ALTA'),
+(11, '2', 'Emmanuel33', 'Lopez', 'Cornejoe', 'ejr@gamil', 'BAJA');
 
 CREATE TABLE `asignaciones` (
   `idasignatura` int(11) NOT NULL,
@@ -63,21 +48,11 @@ CREATE TABLE `asignaciones` (
   `idprof` int(11) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
---
--- Volcado de datos para la tabla `asignaciones`
---
-
 INSERT INTO `asignaciones` (`idasignatura`, `idmat`, `idalumn`, `idprof`) VALUES
 (2, 1, 1, 2),
 (3, 2, 3, 1),
 (4, 2, 1, 2),
 (6, 4, 10, 5);
-
--- --------------------------------------------------------
-
---
--- Estructura de tabla para la tabla `calificaciones`
---
 
 CREATE TABLE `calificaciones` (
   `id_calif` int(11) NOT NULL,
@@ -85,10 +60,6 @@ CREATE TABLE `calificaciones` (
   `id_unidad` int(11) NOT NULL,
   `calificacion` decimal(4,2) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-
---
--- Volcado de datos para la tabla `calificaciones`
---
 
 INSERT INTO `calificaciones` (`id_calif`, `idalumn`, `id_unidad`, `calificacion`) VALUES
 (1, 1, 1, 10.00),
@@ -114,13 +85,10 @@ INSERT INTO `calificaciones` (`id_calif`, `idalumn`, `id_unidad`, `calificacion`
 (21, 3, 2, 8.00),
 (22, 1, 1, 6.00),
 (23, 3, 1, 9.00),
-(24, 4, 1, 8.00);
-
--- --------------------------------------------------------
-
---
--- Estructura de tabla para la tabla `grupos`
---
+(24, 4, 1, 8.00),
+(25, 8, 3, 9.00),
+(26, 1, 3, 8.00),
+(27, 3, 3, 7.00);
 
 CREATE TABLE `grupos` (
   `idgrupo` int(11) NOT NULL,
@@ -129,10 +97,6 @@ CREATE TABLE `grupos` (
   `estatus_grupo` varchar(10) DEFAULT 'ALTA'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
---
--- Volcado de datos para la tabla `grupos`
---
-
 INSERT INTO `grupos` (`idgrupo`, `clave_grupo`, `nombre_grupo`, `estatus_grupo`) VALUES
 (1, '406', '4° Semestre Tecnologías de la Información', 'ALTA'),
 (2, '101', '1° Semestre Tecnologías de la Información', 'ALTA'),
@@ -140,13 +104,9 @@ INSERT INTO `grupos` (`idgrupo`, `clave_grupo`, `nombre_grupo`, `estatus_grupo`)
 (4, '202', '2° Semestre Tecnologías de la Información', 'ALTA'),
 (5, '501', '5° Semestre Tecnologías de la Información', 'ALTA'),
 (6, '601', '6° Semestre Tecnologías de la Información', 'ALTA'),
-(7, '501', '5° Semestre Tecnologías de la Información', 'ALTA');
-
--- --------------------------------------------------------
-
---
--- Estructura de tabla para la tabla `grupo_alumnos`
---
+(7, '501', '5° Semestre Tecnologías de la Información', 'ALTA'),
+(8, '111', 'eeee', 'BAJA'),
+(9, '112', '22', 'BAJA');
 
 CREATE TABLE `grupo_alumnos` (
   `id_ga` int(11) NOT NULL,
@@ -155,20 +115,10 @@ CREATE TABLE `grupo_alumnos` (
   `estatus` varchar(10) DEFAULT 'ALTA'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
---
--- Volcado de datos para la tabla `grupo_alumnos`
---
-
 INSERT INTO `grupo_alumnos` (`id_ga`, `idgrupo`, `idalumn`, `estatus`) VALUES
 (1, 1, 1, 'ALTA'),
 (2, 1, 3, 'ALTA'),
 (3, 1, 10, 'ALTA');
-
--- --------------------------------------------------------
-
---
--- Estructura de tabla para la tabla `materias`
---
 
 CREATE TABLE `materias` (
   `idmat` int(11) NOT NULL,
@@ -178,10 +128,6 @@ CREATE TABLE `materias` (
   `estatus_mat` varchar(10) DEFAULT 'ALTA'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
---
--- Volcado de datos para la tabla `materias`
---
-
 INSERT INTO `materias` (`idmat`, `clave_mat`, `nombre_mat`, `creditos`, `estatus_mat`) VALUES
 (1, 'MAT01', 'Matematicas Discretas', 4, 'ALTA'),
 (2, 'PROG02', 'Programacion II', 5, 'ALTA'),
@@ -189,13 +135,8 @@ INSERT INTO `materias` (`idmat`, `clave_mat`, `nombre_mat`, `creditos`, `estatus
 (4, 'FILO02', 'Filosofia II', 2, 'ALTA'),
 (5, 'DB01', 'Base de Datos', 5, 'ALTA'),
 (6, 'rrr34', '', 4, 'BAJA'),
-(7, 'MAT07', 'Matematicas para la toma de Decisiones', 2, 'ALTA');
-
--- --------------------------------------------------------
-
---
--- Estructura de tabla para la tabla `profesores`
---
+(7, 'MAT07', 'Matematicas para la toma de Decisiones', 2, 'ALTA'),
+(8, 'COM12', 'Computacion', 4, 'BAJA');
 
 CREATE TABLE `profesores` (
   `idprof` int(11) NOT NULL,
@@ -206,10 +147,6 @@ CREATE TABLE `profesores` (
   `estatus_prof` varchar(10) DEFAULT 'ALTA'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
---
--- Volcado de datos para la tabla `profesores`
---
-
 INSERT INTO `profesores` (`idprof`, `nombre_prof`, `apaterno_prof`, `amaterno_prof`, `mail_prof`, `estatus_prof`) VALUES
 (0, 'Robet', 'Prueba', 'Pablo', 'algunprofebaja@gmail.com', 'ALTA'),
 (1, 'Eva Sara', 'García', ' Hernandez', 'DocenteSara@gmail.com', 'ALTA'),
@@ -219,34 +156,19 @@ INSERT INTO `profesores` (`idprof`, `nombre_prof`, `apaterno_prof`, `amaterno_pr
 (5, 'Leonardo', 'Luna', 'NEO', 'algunprofeNEO2@gmail.com', 'ALTA'),
 (6, 'Gabrielle', 'Solis', '.', 'Solis@gmail.com', 'ALTA');
 
--- --------------------------------------------------------
-
---
--- Estructura de tabla para la tabla `puestos`
---
-
 CREATE TABLE `puestos` (
   `id_puesto` int(11) NOT NULL,
   `nombre_puesto` varchar(100) NOT NULL,
   `estatus_puesto` varchar(10) DEFAULT 'ALTA'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
---
--- Volcado de datos para la tabla `puestos`
---
-
 INSERT INTO `puestos` (`id_puesto`, `nombre_puesto`, `estatus_puesto`) VALUES
 (1, 'Administrador', 'ALTA'),
 (2, 'Docentes', 'ALTA'),
 (3, 'Coordinador', 'ALTA'),
-(4, 'Alumno', 'BAJA'),
-(5, 'Hacker', 'BAJA');
-
--- --------------------------------------------------------
-
---
--- Estructura de tabla para la tabla `unidades`
---
+(4, 'Alumno', 'ALTA'),
+(5, 'Hacker', 'BAJA'),
+(6, 'Increible', 'BAJA');
 
 CREATE TABLE `unidades` (
   `id_unidad` int(11) NOT NULL,
@@ -254,21 +176,12 @@ CREATE TABLE `unidades` (
   `estatus_unidad` varchar(10) DEFAULT 'ALTA'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
---
--- Volcado de datos para la tabla `unidades`
---
-
 INSERT INTO `unidades` (`id_unidad`, `nombre_unidad`, `estatus_unidad`) VALUES
 (1, 'Unidad 1 - Parcial 1', 'ALTA'),
 (2, 'Unidad 2 - Parcial 2', 'ALTA'),
 (3, 'Unidad 3 - Parcial 3', 'ALTA'),
-(4, 'Unidad Especial - Recurses', 'ALTA');
-
--- --------------------------------------------------------
-
---
--- Estructura de tabla para la tabla `usuarios`
---
+(4, 'Unidad Especial - Recurses', 'ALTA'),
+(5, 'Unidad especial falsos', 'BAJA');
 
 CREATE TABLE `usuarios` (
   `id_usuario` int(11) NOT NULL,
@@ -280,137 +193,70 @@ CREATE TABLE `usuarios` (
   `estatus_usuario` varchar(10) DEFAULT 'ALTA'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
---
--- Volcado de datos para la tabla `usuarios`
---
-
 INSERT INTO `usuarios` (`id_usuario`, `nombre_usuario`, `username`, `password`, `id_puesto`, `idalumn`, `estatus_usuario`) VALUES
 (1, 'Lopez Cornejo Martin Emmanuel', 'Fazt.admin', '8cb2237d0679ca88db6464eac60da96345513964', 1, NULL, 'ALTA'),
 (2, 'Profe Garcia', 'profe.garcia', '8cb2237d0679ca88db6464eac60da96345513964', 2, NULL, 'ALTA'),
-(3, 'Ashley Graves', 'ashley.alumno', '8cb2237d0679ca88db6464eac60da96345513964', 4, 1, 'ALTA');
+(3, 'Ashley Graves', 'ashley.alumno', '8cb2237d0679ca88db6464eac60da96345513964', 4, 1, 'ALTA'),
+(8, 'Coordinador', 'Coordinador', '8cb2237d0679ca88db6464eac60da96345513964', 3, NULL, 'ALTA');
 
---
--- Índices para tablas volcadas
---
-
---
--- Indices de la tabla `alumnos`
---
 ALTER TABLE `alumnos`
   ADD PRIMARY KEY (`idalumn`);
 
---
--- Indices de la tabla `asignaciones`
---
 ALTER TABLE `asignaciones`
   ADD PRIMARY KEY (`idasignatura`);
 
---
--- Indices de la tabla `calificaciones`
---
 ALTER TABLE `calificaciones`
   ADD PRIMARY KEY (`id_calif`);
 
---
--- Indices de la tabla `grupos`
---
 ALTER TABLE `grupos`
   ADD PRIMARY KEY (`idgrupo`);
 
---
--- Indices de la tabla `grupo_alumnos`
---
 ALTER TABLE `grupo_alumnos`
   ADD PRIMARY KEY (`id_ga`);
 
---
--- Indices de la tabla `materias`
---
 ALTER TABLE `materias`
   ADD PRIMARY KEY (`idmat`);
 
---
--- Indices de la tabla `profesores`
---
 ALTER TABLE `profesores`
   ADD PRIMARY KEY (`idprof`);
 
---
--- Indices de la tabla `puestos`
---
 ALTER TABLE `puestos`
   ADD PRIMARY KEY (`id_puesto`);
 
---
--- Indices de la tabla `unidades`
---
 ALTER TABLE `unidades`
   ADD PRIMARY KEY (`id_unidad`);
 
---
--- Indices de la tabla `usuarios`
---
 ALTER TABLE `usuarios`
   ADD PRIMARY KEY (`id_usuario`),
   ADD UNIQUE KEY `username` (`username`);
 
---
--- AUTO_INCREMENT de las tablas volcadas
---
-
---
--- AUTO_INCREMENT de la tabla `alumnos`
---
 ALTER TABLE `alumnos`
-  MODIFY `idalumn` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=11;
+  MODIFY `idalumn` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=12;
 
---
--- AUTO_INCREMENT de la tabla `asignaciones`
---
 ALTER TABLE `asignaciones`
-  MODIFY `idasignatura` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=7;
+  MODIFY `idasignatura` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=8;
 
---
--- AUTO_INCREMENT de la tabla `calificaciones`
---
 ALTER TABLE `calificaciones`
-  MODIFY `id_calif` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=25;
+  MODIFY `id_calif` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=28;
 
---
--- AUTO_INCREMENT de la tabla `grupos`
---
 ALTER TABLE `grupos`
-  MODIFY `idgrupo` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=8;
+  MODIFY `idgrupo` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=10;
 
---
--- AUTO_INCREMENT de la tabla `grupo_alumnos`
---
 ALTER TABLE `grupo_alumnos`
-  MODIFY `id_ga` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
+  MODIFY `id_ga` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
 
---
--- AUTO_INCREMENT de la tabla `materias`
---
 ALTER TABLE `materias`
-  MODIFY `idmat` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=8;
+  MODIFY `idmat` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=9;
 
---
--- AUTO_INCREMENT de la tabla `puestos`
---
 ALTER TABLE `puestos`
-  MODIFY `id_puesto` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=6;
+  MODIFY `id_puesto` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=7;
 
---
--- AUTO_INCREMENT de la tabla `unidades`
---
 ALTER TABLE `unidades`
-  MODIFY `id_unidad` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
+  MODIFY `id_unidad` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=6;
 
---
--- AUTO_INCREMENT de la tabla `usuarios`
---
 ALTER TABLE `usuarios`
-  MODIFY `id_usuario` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=8;
+  MODIFY `id_usuario` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=9;
+
 COMMIT;
 
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
