@@ -1,13 +1,9 @@
-SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
-START TRANSACTION;
-SET time_zone = "+00:00";
+SET NAMES utf8mb4;
 
-/*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
-/*!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS */;
-/*!40101 SET @OLD_COLLATION_CONNECTION=@@COLLATION_CONNECTION */;
-/*!40101 SET NAMES utf8mb4 */;
+CREATE DATABASE IF NOT EXISTS saemelc
+    CHARACTER SET utf8mb4
+    COLLATE utf8mb4_general_ci;
 
-CREATE DATABASE IF NOT EXISTS saemelc CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci;
 USE saemelc;
 
 DROP TABLE IF EXISTS calificaciones;
@@ -22,7 +18,7 @@ DROP TABLE IF EXISTS profesores;
 DROP TABLE IF EXISTS alumnos;
 
 CREATE TABLE `alumnos` (
-  `idalumn` int(11) NOT NULL,
+  `idalumn` int(11) NOT NULL AUTO_INCREMENT PRIMARY KEY,
   `matricula_al` varchar(50) NOT NULL,
   `nombre_al` varchar(100) NOT NULL,
   `apaterno_al` varchar(100) NOT NULL,
@@ -35,14 +31,12 @@ INSERT INTO `alumnos` (`idalumn`, `matricula_al`, `nombre_al`, `apaterno_al`, `a
 (1, '6666', 'Ashley', 'Graves', 'G', 'hermanoslocos@gmail.com', 'ALTA'),
 (3, '6667', 'Andrew', 'Graves', 'G', 'hermanoslocos@gmail.com', 'ALTA'),
 (4, '1234', 'Lilith', 'Fuentes', 'Perez', 'algunalumna@gmail.com', 'ALTA'),
-(5, '0000', 'Prueba', 'Reprobado', 'jiji', 'todonoob@gmail.com', 'BAJA'),
 (8, '1247', 'Lynette', 'Scavo', '.', 'Scavo@gmail.com', 'ALTA'),
 (9, 'Cortes', 'Martin', 'Emmanuel', 'Lopez', 'algunalumno@gmail.com', 'ALTA'),
-(10, '9238', 'Rocio', 'Cornejo', 'Esquivel', 'Rox@gmail.com', 'ALTA'),
-(11, '2', 'Emmanuel33', 'Lopez', 'Cornejoe', 'ejr@gamil', 'BAJA');
+(10, '9238', 'Rocio', 'Cornejo', 'Esquivel', 'Rox@gmail.com', 'ALTA');
 
 CREATE TABLE `asignaciones` (
-  `idasignatura` int(11) NOT NULL,
+  `idasignatura` int(11) NOT NULL AUTO_INCREMENT PRIMARY KEY,
   `idmat` int(11) NOT NULL,
   `idalumn` int(11) NOT NULL,
   `idprof` int(11) NOT NULL
@@ -55,7 +49,7 @@ INSERT INTO `asignaciones` (`idasignatura`, `idmat`, `idalumn`, `idprof`) VALUES
 (6, 4, 10, 5);
 
 CREATE TABLE `calificaciones` (
-  `id_calif` int(11) NOT NULL,
+  `id_calif` int(11) NOT NULL AUTO_INCREMENT PRIMARY KEY,
   `idalumn` int(11) NOT NULL,
   `id_unidad` int(11) NOT NULL,
   `calificacion` decimal(4,2) NOT NULL
@@ -91,7 +85,7 @@ INSERT INTO `calificaciones` (`id_calif`, `idalumn`, `id_unidad`, `calificacion`
 (27, 3, 3, 7.00);
 
 CREATE TABLE `grupos` (
-  `idgrupo` int(11) NOT NULL,
+  `idgrupo` int(11) NOT NULL AUTO_INCREMENT PRIMARY KEY,
   `clave_grupo` varchar(50) NOT NULL,
   `nombre_grupo` varchar(100) NOT NULL,
   `estatus_grupo` varchar(10) DEFAULT 'ALTA'
@@ -103,13 +97,10 @@ INSERT INTO `grupos` (`idgrupo`, `clave_grupo`, `nombre_grupo`, `estatus_grupo`)
 (3, '407', '4° Semestre Tecnologías de la Información.', 'ALTA'),
 (4, '202', '2° Semestre Tecnologías de la Información', 'ALTA'),
 (5, '501', '5° Semestre Tecnologías de la Información', 'ALTA'),
-(6, '601', '6° Semestre Tecnologías de la Información', 'ALTA'),
-(7, '501', '5° Semestre Tecnologías de la Información', 'ALTA'),
-(8, '111', 'eeee', 'BAJA'),
-(9, '112', '22', 'BAJA');
+(6, '601', '6° Semestre Tecnologías de la Información', 'ALTA');
 
 CREATE TABLE `grupo_alumnos` (
-  `id_ga` int(11) NOT NULL,
+  `id_ga` int(11) NOT NULL AUTO_INCREMENT PRIMARY KEY,
   `idgrupo` int(11) NOT NULL,
   `idalumn` int(11) NOT NULL,
   `estatus` varchar(10) DEFAULT 'ALTA'
@@ -121,7 +112,7 @@ INSERT INTO `grupo_alumnos` (`id_ga`, `idgrupo`, `idalumn`, `estatus`) VALUES
 (3, 1, 10, 'ALTA');
 
 CREATE TABLE `materias` (
-  `idmat` int(11) NOT NULL,
+  `idmat` int(11) NOT NULL AUTO_INCREMENT PRIMARY KEY,
   `clave_mat` varchar(50) NOT NULL,
   `nombre_mat` varchar(150) NOT NULL,
   `creditos` int(11) NOT NULL,
@@ -134,12 +125,11 @@ INSERT INTO `materias` (`idmat`, `clave_mat`, `nombre_mat`, `creditos`, `estatus
 (3, 'Filo01', 'Filosofia', 1, 'BAJA'),
 (4, 'FILO02', 'Filosofia II', 2, 'ALTA'),
 (5, 'DB01', 'Base de Datos', 5, 'ALTA'),
-(6, 'rrr34', '', 4, 'BAJA'),
 (7, 'MAT07', 'Matematicas para la toma de Decisiones', 2, 'ALTA'),
 (8, 'COM12', 'Computacion', 4, 'BAJA');
 
 CREATE TABLE `profesores` (
-  `idprof` int(11) NOT NULL,
+  `idprof` int(11) NOT NULL PRIMARY KEY,
   `nombre_prof` varchar(100) NOT NULL,
   `apaterno_prof` varchar(100) NOT NULL,
   `amaterno_prof` varchar(100) NOT NULL,
@@ -148,8 +138,7 @@ CREATE TABLE `profesores` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 INSERT INTO `profesores` (`idprof`, `nombre_prof`, `apaterno_prof`, `amaterno_prof`, `mail_prof`, `estatus_prof`) VALUES
-(0, 'Robet', 'Prueba', 'Pablo', 'algunprofebaja@gmail.com', 'ALTA'),
-(1, 'Eva Sara', 'García', ' Hernandez', 'DocenteSara@gmail.com', 'ALTA'),
+(1, 'Eva Sara', 'García', 'Hernandez', 'DocenteSara@gmail.com', 'ALTA'),
 (2, 'Chris', 'Prince', 'NEO', 'algunprofeNEO@gmail.com', 'ALTA'),
 (3, 'Carlos', 'Mendoza', 'Ramirez', 'algunprofe@gmail.com', 'ALTA'),
 (4, 'Anri', 'Teieri', 'Teieri', 'Teieri@gmail.com', 'ALTA'),
@@ -157,7 +146,7 @@ INSERT INTO `profesores` (`idprof`, `nombre_prof`, `apaterno_prof`, `amaterno_pr
 (6, 'Gabrielle', 'Solis', '.', 'Solis@gmail.com', 'ALTA');
 
 CREATE TABLE `puestos` (
-  `id_puesto` int(11) NOT NULL,
+  `id_puesto` int(11) NOT NULL AUTO_INCREMENT PRIMARY KEY,
   `nombre_puesto` varchar(100) NOT NULL,
   `estatus_puesto` varchar(10) DEFAULT 'ALTA'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
@@ -166,12 +155,10 @@ INSERT INTO `puestos` (`id_puesto`, `nombre_puesto`, `estatus_puesto`) VALUES
 (1, 'Administrador', 'ALTA'),
 (2, 'Docentes', 'ALTA'),
 (3, 'Coordinador', 'ALTA'),
-(4, 'Alumno', 'ALTA'),
-(5, 'Hacker', 'BAJA'),
-(6, 'Increible', 'BAJA');
+(4, 'Alumno', 'ALTA');
 
 CREATE TABLE `unidades` (
-  `id_unidad` int(11) NOT NULL,
+  `id_unidad` int(11) NOT NULL AUTO_INCREMENT PRIMARY KEY,
   `nombre_unidad` varchar(100) NOT NULL,
   `estatus_unidad` varchar(10) DEFAULT 'ALTA'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
@@ -180,13 +167,12 @@ INSERT INTO `unidades` (`id_unidad`, `nombre_unidad`, `estatus_unidad`) VALUES
 (1, 'Unidad 1 - Parcial 1', 'ALTA'),
 (2, 'Unidad 2 - Parcial 2', 'ALTA'),
 (3, 'Unidad 3 - Parcial 3', 'ALTA'),
-(4, 'Unidad Especial - Recurses', 'ALTA'),
-(5, 'Unidad especial falsos', 'BAJA');
+(4, 'Unidad Especial - Recurses', 'ALTA');
 
 CREATE TABLE `usuarios` (
-  `id_usuario` int(11) NOT NULL,
+  `id_usuario` int(11) NOT NULL AUTO_INCREMENT PRIMARY KEY,
   `nombre_usuario` varchar(100) NOT NULL,
-  `username` varchar(50) NOT NULL,
+  `username` varchar(50) NOT NULL UNIQUE,
   `password` varchar(255) NOT NULL,
   `id_puesto` int(11) NOT NULL,
   `idalumn` int(11) DEFAULT NULL,
@@ -199,66 +185,13 @@ INSERT INTO `usuarios` (`id_usuario`, `nombre_usuario`, `username`, `password`, 
 (3, 'Ashley Graves', 'ashley.alumno', '8cb2237d0679ca88db6464eac60da96345513964', 4, 1, 'ALTA'),
 (8, 'Coordinador', 'Coordinador', '8cb2237d0679ca88db6464eac60da96345513964', 3, NULL, 'ALTA');
 
-ALTER TABLE `alumnos`
-  ADD PRIMARY KEY (`idalumn`);
-
-ALTER TABLE `asignaciones`
-  ADD PRIMARY KEY (`idasignatura`);
-
-ALTER TABLE `calificaciones`
-  ADD PRIMARY KEY (`id_calif`);
-
-ALTER TABLE `grupos`
-  ADD PRIMARY KEY (`idgrupo`);
-
-ALTER TABLE `grupo_alumnos`
-  ADD PRIMARY KEY (`id_ga`);
-
-ALTER TABLE `materias`
-  ADD PRIMARY KEY (`idmat`);
-
-ALTER TABLE `profesores`
-  ADD PRIMARY KEY (`idprof`);
-
-ALTER TABLE `puestos`
-  ADD PRIMARY KEY (`id_puesto`);
-
-ALTER TABLE `unidades`
-  ADD PRIMARY KEY (`id_unidad`);
-
-ALTER TABLE `usuarios`
-  ADD PRIMARY KEY (`id_usuario`),
-  ADD UNIQUE KEY `username` (`username`);
-
-ALTER TABLE `alumnos`
-  MODIFY `idalumn` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=12;
-
-ALTER TABLE `asignaciones`
-  MODIFY `idasignatura` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=8;
-
-ALTER TABLE `calificaciones`
-  MODIFY `id_calif` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=28;
-
-ALTER TABLE `grupos`
-  MODIFY `idgrupo` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=10;
-
-ALTER TABLE `grupo_alumnos`
-  MODIFY `id_ga` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
-
-ALTER TABLE `materias`
-  MODIFY `idmat` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=9;
-
-ALTER TABLE `puestos`
-  MODIFY `id_puesto` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=7;
-
-ALTER TABLE `unidades`
-  MODIFY `id_unidad` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=6;
-
-ALTER TABLE `usuarios`
-  MODIFY `id_usuario` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=9;
-
-COMMIT;
-
-/*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
-/*!40101 SET CHARACTER_SET_RESULTS=@OLD_CHARACTER_SET_RESULTS */;
-/*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
+-- =====================================================================
+--  USUARIOS Y CONTRASEÑAS DE PRUEBA (Cifradas con SHA1)
+-- =====================================================================
+--  Usuario         | Contraseña | Rol
+--  ----------------|------------|--------------------------------------
+--  Fazt.admin      | 12345      | Administrador (acceso total)
+--  profe.garcia    | 12345      | Docentes (captura y reportes)
+--  ashley.alumno   | 12345      | Alumno (boleta de Ashley Graves)
+--  Coordinador     | 12345      | Coordinador (gestión y reportes)
+-- =====================================================================
