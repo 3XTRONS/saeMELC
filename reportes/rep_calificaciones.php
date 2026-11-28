@@ -1,116 +1,197 @@
 <?php
 include_once("../conexion.php");
-include_once("../navegacion/nav.php");
+requerirRol(['ADMINISTRADOR', 'MAESTRO']);
 
-$idmat = intval($_GET['idmat'] ?? 0);
-$idgrupo = intval($_GET['idgrupo'] ?? 0);
+$idMateria = (int)($_GET["id_materia"] ?? 0);
+$idGrupo   = (int)($_GET["id_grupo"] ?? 0);
+$soloMaestro = esMaestro();
+$idProfSesion = $soloMaestro ? (int)$_SESSION["id_profesor"] : 0;
 
-$materias_select = $conexion->query("SELECT idmat, clave_mat, nombre_mat FROM materias WHERE estatus_mat = 'ALTA'");
-$grupos_select = $conexion->query("SELECT idgrupo, clave_grupo, nombre_grupo FROM grupos WHERE estatus_grupo = 'ALTA'");
+if ($soloMaestro) {
+    $stmt = $conexion->prepare(
+        "SELECT DISTINCT m.ID_MATERIAS, m.CLAVE_MATERIA, m.NOMBRE_MATERIA
+         FROM materias m
+         INNER JOIN asignatura s ON s.ID_MATERIAS = m.ID_MATERIAS
+         WHERE m.ESTATUS = 'ALTA' AND s.ID_PROFESORES = ?
+         ORDER BY m.CLAVE_MATERIA"
+    );
+    $stmt->bind_param("i", $idProfSesion);
+    $stmt->execute();
+    $materias = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
+    $stmt->close();
+} else {
+    $materias = $conexion->query("SELECT ID_MATERIAS, CLAVE_MATERIA, NOMBRE_MATERIA FROM materias WHERE ESTATUS = 'ALTA' ORDER BY CLAVE_MATERIA")->fetch_all(MYSQLI_ASSOC);
+}
 
-$reporte = null;
+$grupos   = $conexion->query("SELECT ID_GRUPOS, NOMBRE_GRUPO FROM grupos WHERE ESTATUS = 'ALTA' ORDER BY NOMBRE_GRUPO")->fetch_all(MYSQLI_ASSOC);
+$unidades = $conexion->query("SELECT ID_UNIDAD, DESCRIPCION FROM unidad WHERE ESTATUS = 'ALTA' ORDER BY ID_UNIDAD")->fetch_all(MYSQLI_ASSOC);
 
-if ($idmat > 0 && $idgrupo > 0) {
-    $sql = "SELECT a.idalumn, a.matricula_al, CONCAT(a.nombre_al, ' ', a.apaterno_al, ' ', a.amaterno_al) AS alumno,
-                   u.nombre_unidad, c.calificacion
-            FROM grupo_alumnos ga
-            INNER JOIN alumnos a ON ga.idalumn = a.idalumn
-            INNER JOIN calificaciones c ON a.idalumn = c.idalumn
-            INNER JOIN unidades u ON c.id_unidad = u.id_unidad
-            WHERE ga.idgrupo = $idgrupo AND a.estatus_al = 'ALTA'
-            ORDER BY a.idalumn, u.id_unidad";
-    $reporte = $conexion->query($sql);
+$materiaSel = null;
+$filas = [];
+
+if ($idMateria > 0) {
+    foreach ($materias as $mItem) {
+        if ((int)$mItem["ID_MATERIAS"] === $idMateria) {
+            $materiaSel = $mItem;
+            break;
+        }
+    }
+
+    if ($materiaSel !== null) {
+        $sql = "SELECT a.ID_ALUMNOS, a.MATRICULA,
+                       CONCAT(a.NOMBRE, ' ', a.APELLIDO_PATERNO, ' ', a.APELLIDO_MATERNO) AS ALUMNO,
+                       GROUP_CONCAT(DISTINCT g.NOMBRE_GRUPO ORDER BY g.NOMBRE_GRUPO SEPARATOR ', ') AS GRUPOS
+                FROM asignatura s
+                INNER JOIN alumnos a ON a.ID_ALUMNOS = s.ID_ALUMNOS
+                LEFT JOIN grupo_alumno ga ON ga.ID_ALUMNOS = a.ID_ALUMNOS AND ga.ESTATUS = 'ALTA'
+                LEFT JOIN grupos g ON g.ID_GRUPOS = ga.ID_GRUPOS AND g.ESTATUS = 'ALTA'
+                WHERE s.ID_MATERIAS = ? AND a.ESTATUS = 'ALTA'";
+        if ($soloMaestro) {
+            $sql .= " AND s.ID_PROFESORES = " . $idProfSesion;
+        }
+        if ($idGrupo > 0) {
+            $sql .= " AND ga.ID_GRUPOS = " . $idGrupo;
+        }
+        $sql .= " GROUP BY a.ID_ALUMNOS, a.MATRICULA, a.NOMBRE, a.APELLIDO_PATERNO, a.APELLIDO_MATERNO
+                  ORDER BY a.APELLIDO_PATERNO, a.APELLIDO_MATERNO, a.NOMBRE";
+
+        $stmt = $conexion->prepare($sql);
+        $stmt->bind_param("i", $idMateria);
+        $stmt->execute();
+        $alumnosBase = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
+        $stmt->close();
+
+        $stmtCal = $conexion->prepare("SELECT ID_UNIDAD, CALIFICACION FROM calificaciones WHERE ID_ALUMNOS = ? AND ID_MATERIAS = ?");
+        foreach ($alumnosBase as $al) {
+            $idAl = (int)$al["ID_ALUMNOS"];
+            $stmtCal->bind_param("ii", $idAl, $idMateria);
+            $stmtCal->execute();
+            $resCal = $stmtCal->get_result();
+            $notas = [];
+            while ($rc = $resCal->fetch_assoc()) {
+                $notas[(int)$rc["ID_UNIDAD"]] = (float)$rc["CALIFICACION"];
+            }
+            $al["notas"] = $notas;
+            $al["promedio"] = count($notas) > 0 ? round(array_sum($notas) / count($notas), 2) : null;
+            $filas[] = $al;
+        }
+        $stmtCal->close();
+    }
+}
+
+if (isset($_GET["descargar"]) && $materiaSel !== null && count($filas) > 0) {
+    header("Content-Type: application/vnd.ms-excel; charset=utf-8");
+    header("Content-Disposition: attachment; filename=\"reporte_calificaciones_" . (int)$idMateria . ".xls\"");
+    echo "\xEF\xBB\xBF<table border='1'>";
+    echo "<tr><th colspan='" . (5 + count($unidades)) . "'>Reporte: Calificaciones — " . h($materiaSel["CLAVE_MATERIA"] . " - " . $materiaSel["NOMBRE_MATERIA"]) . "</th></tr>";
+    echo "<tr><th>#</th><th>Matrícula</th><th>Alumno</th><th>Grupo</th>";
+    foreach ($unidades as $u) { echo "<th>" . h($u["DESCRIPCION"]) . "</th>"; }
+    echo "<th>Promedio</th></tr>";
+    foreach ($filas as $i => $f) {
+        echo "<tr><td>" . ($i + 1) . "</td><td>" . h($f["MATRICULA"]) . "</td><td>" . h($f["ALUMNO"]) . "</td><td>" . h($f["GRUPOS"] ?: "—") . "</td>";
+        foreach ($unidades as $u) {
+            $idU = (int)$u["ID_UNIDAD"];
+            echo "<td>" . (isset($f["notas"][$idU]) ? $f["notas"][$idU] : "-") . "</td>";
+        }
+        echo "<td>" . ($f["promedio"] !== null ? $f["promedio"] : "-") . "</td></tr>";
+    }
+    echo "</table>";
+    exit;
 }
 ?>
-
 <!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Reporte: Calificaciones por Materia y Grupo</title>
-    <style>
-        body { background-color: #f3f1f4; }
-        .formulario { background-color: white; max-width: 950px; margin: 30px auto; border-radius: 5px; box-shadow: 0 2px 10px rgba(0,0,0,0.15); overflow: hidden; }
-        .titulo { background-color: #172554; color: white; padding: 15px; text-align: center; }
-        .contenido { padding: 25px; }
-        .pie { text-align: center; padding: 15px; color: #666; font-size: 0.9rem; border-top: 1px solid #eee; }
-        @media print { nav, .navbar, .btn, form, .pie, .no-print { display: none !important; } }
-    </style>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reporte: Calificaciones - SAE MELC</title>
+    <link href="<?= $base ?>/assets/css/bootstrap.min.css" rel="stylesheet">
 </head>
 <body>
+<?php include_once("../navegacion/nav.php"); ?>
 
-<div class="container">
-    <div class="formulario">
-        <div class="titulo"><h2 class="m-0">Reporte: Calificaciones por Materia y Grupo</h2></div>
-        <div class="contenido">
-            <form method="GET" action="rep_calificaciones.php" class="row align-items-end mb-4 no-print">
-                <div class="col-md-5 mb-2">
-                    <label class="font-weight-bold">Materia</label>
-                    <select name="idmat" class="form-control" required>
+<div class="container mt-5">
+    <div class="card shadow">
+        <div class="card-header bg-sae-zafiro text-center py-3">
+            <h2 class="mb-0">Reporte: Calificaciones por Materia</h2>
+        </div>
+        <div class="card-body p-4">
+            <form method="GET" class="row g-2 mb-4 no-imprimir">
+                <div class="col-md-5">
+                    <label class="form-label fw-bold">Selecciona Materia</label>
+                    <select name="id_materia" class="form-select" required>
                         <option value="">Selecciona materia...</option>
-                        <?php if ($materias_select): ?>
-                            <?php while ($m = $materias_select->fetch_assoc()): ?>
-                                <option value="<?php echo $m['idmat']; ?>" <?php echo ($idmat == $m['idmat']) ? 'selected' : ''; ?>>
-                                    <?php echo htmlspecialchars($m['clave_mat'] . ' - ' . $m['nombre_mat']); ?>
-                                </option>
-                            <?php endwhile; ?>
-                        <?php endif; ?>
+                        <?php foreach ($materias as $m) { ?>
+                            <option value="<?= $m["ID_MATERIAS"] ?>" <?= $idMateria === (int)$m["ID_MATERIAS"] ? "selected" : "" ?>>
+                                <?= h($m["CLAVE_MATERIA"] . " - " . $m["NOMBRE_MATERIA"]) ?>
+                            </option>
+                        <?php } ?>
                     </select>
                 </div>
-                <div class="col-md-5 mb-2">
-                    <label class="font-weight-bold">Grupo</label>
-                    <select name="idgrupo" class="form-control" required>
-                        <option value="">Selecciona grupo...</option>
-                        <?php if ($grupos_select): ?>
-                            <?php while ($g = $grupos_select->fetch_assoc()): ?>
-                                <option value="<?php echo $g['idgrupo']; ?>" <?php echo ($idgrupo == $g['idgrupo']) ? 'selected' : ''; ?>>
-                                    <?php echo htmlspecialchars($g['clave_grupo'] . ' - ' . $g['nombre_grupo']); ?>
-                                </option>
-                            <?php endwhile; ?>
-                        <?php endif; ?>
+                <div class="col-md-4">
+                    <label class="form-label fw-bold">Grupo (opcional)</label>
+                    <select name="id_grupo" class="form-select">
+                        <option value="0">Todos los grupos</option>
+                        <?php foreach ($grupos as $g) { ?>
+                            <option value="<?= $g["ID_GRUPOS"] ?>" <?= $idGrupo === (int)$g["ID_GRUPOS"] ? "selected" : "" ?>>
+                                <?= h($g["NOMBRE_GRUPO"]) ?>
+                            </option>
+                        <?php } ?>
                     </select>
                 </div>
-                <div class="col-md-2 mb-2">
-                    <button type="submit" class="btn btn-secondary w-100">Consultar</button>
+                <div class="col-md-3 d-flex align-items-end">
+                    <button type="submit" class="btn btn-secondary w-100">Generar Reporte</button>
                 </div>
             </form>
 
-            <?php if ($idmat > 0 && $idgrupo > 0): ?>
-                <div class="d-flex justify-content-end mb-3 no-print">
-                    <button onclick="window.print();" class="btn btn-outline-dark">🖨️ Imprimir / Guardar PDF</button>
+            <?php if ($materiaSel !== null) { ?>
+                <div class="d-flex justify-content-end gap-2 mb-3 no-imprimir">
+                    <?php if (count($filas) > 0) { ?>
+                        <a href="?id_materia=<?= $idMateria ?>&id_grupo=<?= $idGrupo ?>&descargar=1" class="btn btn-success btn-sm">Descargar Excel</a>
+                    <?php } ?>
+                    <button type="button" class="btn btn-outline-secondary btn-sm" onclick="window.print()">Imprimir / Guardar PDF</button>
                 </div>
 
                 <div class="table-responsive">
-                    <table class="table table-bordered table-striped">
-                        <thead style="background-color: #212529; color: white;">
+                    <table class="table table-bordered table-striped align-middle">
+                        <thead class="table-dark">
                             <tr>
+                                <th style="width: 50px;">#</th>
                                 <th>Matrícula</th>
                                 <th>Alumno</th>
-                                <th>Unidad</th>
-                                <th>Calificación</th>
+                                <th>Grupo</th>
+                                <?php foreach ($unidades as $u) { ?><th><?= h($u["DESCRIPCION"]) ?></th><?php } ?>
+                                <th>Promedio</th>
                             </tr>
                         </thead>
                         <tbody>
-                            <?php if ($reporte && $reporte->num_rows > 0): ?>
-                                <?php while ($row = $reporte->fetch_assoc()): ?>
-                                    <tr>
-                                        <td><?php echo htmlspecialchars($row['matricula_al']); ?></td>
-                                        <td><?php echo htmlspecialchars($row['alumno']); ?></td>
-                                        <td><?php echo htmlspecialchars($row['nombre_unidad']); ?></td>
-                                        <td><b><?php echo number_format($row['calificacion'], 2); ?></b></td>
-                                    </tr>
-                                <?php endwhile; ?>
-                            <?php else: ?>
-                                <tr><td colspan="4" class="text-center py-3 text-muted">No se encontraron calificaciones asociadas.</td></tr>
-                            <?php endif; ?>
+                            <?php if (count($filas) === 0) { ?>
+                                <tr><td colspan="<?= 5 + count($unidades) ?>" class="text-center text-muted">No hay alumnos registrados para este filtro.</td></tr>
+                            <?php } ?>
+                            <?php foreach ($filas as $i => $f) { ?>
+                                <tr>
+                                    <td class="fw-bold"><?= $i + 1 ?></td>
+                                    <td><?= h($f["MATRICULA"]) ?></td>
+                                    <td><?= h($f["ALUMNO"]) ?></td>
+                                    <td><?= h($f["GRUPOS"] ?: "—") ?></td>
+                                    <?php foreach ($unidades as $u) {
+                                        $idU = (int)$u["ID_UNIDAD"];
+                                    ?>
+                                        <td><?= isset($f["notas"][$idU]) ? h($f["notas"][$idU]) : "—" ?></td>
+                                    <?php } ?>
+                                    <td><strong><?= $f["promedio"] !== null ? h($f["promedio"]) : "—" ?></strong></td>
+                                </tr>
+                            <?php } ?>
                         </tbody>
                     </table>
                 </div>
-            <?php endif; ?>
+            <?php } ?>
         </div>
-        <div class="pie">Reporte de calificaciones por materia y grupo - Emmanuel Lopez Cornejo</div>
+        <div class="card-footer text-center text-muted small">
+            Reporte de calificaciones - Lopez Cornejo Martin Emmanuel
+        </div>
     </div>
 </div>
-
+<script src="<?= $base ?>/assets/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>

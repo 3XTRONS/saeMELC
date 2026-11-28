@@ -1,127 +1,64 @@
 <?php
-// Capturar respuestas o mensajes enviados desde el backend (procesos/insert_alumno.php)
-$mensaje = "";
-if (isset($_GET['status'])) {
-    if ($_GET['status'] == 'success') {
-        $mensaje = '<div class="alert alert-success mt-3">¡Alumno registrado correctamente!</div>';
-    } elseif ($_GET['status'] == 'error') {
-        $msgError = $_GET['msg'] ?? 'Ocurrió un error inesperado.';
-        $mensaje = '<div class="alert alert-danger mt-3">Error al registrar: ' . htmlspecialchars($msgError) . '</div>';
+require_once __DIR__ . "/../conexion.php";
+requerirRol(['ADMINISTRADOR']);
+
+$error = "";
+if ($_SERVER["REQUEST_METHOD"] === "POST") {
+    $mat  = trim($_POST["matricula"]);
+    $nom  = trim($_POST["nombre"]);
+    $apat = trim($_POST["apaterno"]);
+    $amat = trim($_POST["amaterno"]);
+    $dom  = trim($_POST["domicilio"]);
+    $mail = trim($_POST["correo"]);
+    $tel  = trim($_POST["telefono"]);
+
+    $stmt = $conexion->prepare("INSERT INTO alumnos (MATRICULA, NOMBRE, APELLIDO_PATERNO, APELLIDO_MATERNO, DOMICILIO, CORREO, TELEFONO, ESTATUS) VALUES (?, ?, ?, ?, ?, ?, ?, 'ALTA')");
+    $stmt->bind_param("sssssss", $mat, $nom, $apat, $amat, $dom, $mail, $tel);
+    if ($stmt->execute()) {
+        header("Location: " . $base . "/crude/crude_alumno.php");
+        exit;
     }
+    $error = "Error al registrar el alumno.";
+    $stmt->close();
 }
 ?>
-
 <!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Registro de Alumnos - SAE</title>
-    <!-- Bootstrap CSS y Bootstrap Icons -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
-    
-    <style>
-        body {
-            background-color: #f3f1f4;
-        }
-        .formulario {
-            background-color: white;
-            max-width: 1000px;
-            margin: 30px auto;
-            border-radius: 5px;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.15);
-            overflow: hidden;
-        }
-        .titulo {
-            background-color: #172554;
-            color: white;
-            padding: 15px;
-            text-align: center;
-        }
-        .titulo h2 {
-            margin: 0;
-            font-size: 1.8rem;
-        }
-        .contenido {
-            padding: 25px;
-        }
-        .btn-sae {
-            background-color: #9f1239;
-            color: white;
-            border: none;
-            padding: 8px 16px;
-            border-radius: 4px;
-        }
-        .btn-sae:hover {
-            background-color: #881337;
-            color: white;
-        }
-        .pie {
-            text-align: center;
-            padding: 15px;
-            color: #666;
-            font-size: 0.9rem;
-            border-top: 1px solid #eee;
-        }
-    </style>
+    <title>Registrar Alumno - SAE MELC</title>
+    <link href="<?= $base ?>/assets/css/bootstrap.min.css" rel="stylesheet">
 </head>
 <body>
+<?php include __DIR__ . "/../navegacion/nav.php"; ?>
 
-<!-- Incluir la barra de navegación desplegable del profesor -->
-<?php include_once("../navegacion/nav.php"); ?>
-
-<div class="container">
-    <div class="formulario">
-        <div class="titulo">
-            <h2>Registro de Alumnos</h2>
+<div class="container mt-5">
+    <div class="card shadow">
+        <div class="card-header bg-sae-zafiro text-center">
+            <h2 class="mb-0">Registrar Alumno</h2>
         </div>
-
-        <div class="contenido">
-            <!-- Mensaje de éxito o error devuelto por la base de datos -->
-            <?php echo $mensaje; ?>
-
-            <form method="post" action="../procesos/insert_alumno.php">
-                <div class="mb-3">
-                    <label class="form-label">Nombre</label>
-                    <input type="text" name="nombre" class="form-control" required placeholder="Ej. Ashley">
+        <div class="card-body">
+            <?php if ($error !== "") { ?><div class="alert alert-danger"><?= h($error) ?></div><?php } ?>
+            <form method="POST">
+                <div class="row g-3">
+                    <div class="col-md-4"><label class="form-label">Matrícula</label><input type="text" name="matricula" class="form-control" required></div>
+                    <div class="col-md-4"><label class="form-label">Nombre</label><input type="text" name="nombre" class="form-control" required></div>
+                    <div class="col-md-4"><label class="form-label">Apellido paterno</label><input type="text" name="apaterno" class="form-control" required></div>
+                    <div class="col-md-4"><label class="form-label">Apellido materno</label><input type="text" name="amaterno" class="form-control" required></div>
+                    <div class="col-md-4"><label class="form-label">Correo</label><input type="email" name="correo" class="form-control" required></div>
+                    <div class="col-md-4"><label class="form-label">Teléfono</label><input type="text" name="telefono" class="form-control" required></div>
+                    <div class="col-12"><label class="form-label">Domicilio</label><input type="text" name="domicilio" class="form-control" required></div>
                 </div>
-
-                <div class="mb-3">
-                    <label class="form-label">Apellido paterno</label>
-                    <input type="text" name="apellido_paterno" class="form-control" required placeholder="Ej. Graves">
-                </div>
-
-                <div class="mb-3">
-                    <label class="form-label">Apellido materno</label>
-                    <input type="text" name="apellido_materno" class="form-control" required placeholder="Ej. G">
-                </div>
-
-                <div class="mb-3">
-                    <label class="form-label">Número de control</label>
-                    <input type="text" name="numero_control" class="form-control" required placeholder="Ej. 6666">
-                </div>
-
-                <div class="mb-3">
-                    <label class="form-label">Correo electrónico</label>
-                    <input type="email" name="correo" class="form-control" required placeholder="ejemplo@correo.com">
-                </div>
-
-                <div class="d-flex align-items-center gap-3 mt-4">
-                    <button type="submit" class="btn btn-sae">Registrar alumno</button>
-                    <!-- Enlace corregido hacia el catálogo en lugar de index.php -->
-                    <a href="../crude/crude_alumno.php" class="btn btn-outline-secondary">Regresar al catálogo</a>
+                <div class="mt-4 d-flex gap-2">
+                    <button type="submit" class="btn btn-sae">Guardar Alumno</button>
+                    <a href="<?= $base ?>/crude/crude_alumno.php" class="btn btn-outline-secondary">Cancelar</a>
                 </div>
             </form>
         </div>
-
-        <div class="pie">
-            Registro de alumnos - Programación II Emmanuel Lopez Cornejo
-        </div>
+        <div class="card-footer text-center text-muted">Registro de Alumnos - Lopez Cornejo Martin Emmanuel</div>
     </div>
 </div>
-
-<!-- Scripts de Bootstrap requeridos para el funcionamiento del Navbar -->
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="<?= $base ?>/assets/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>

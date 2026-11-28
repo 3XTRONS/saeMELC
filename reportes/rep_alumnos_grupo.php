@@ -1,114 +1,152 @@
 <?php
 include_once("../conexion.php");
-include_once("../navegacion/nav.php");
+requerirRol(['ADMINISTRADOR', 'MAESTRO']);
 
-$idgrupo = intval($_GET['idgrupo'] ?? 0);
-$grupos = $conexion->query("SELECT idgrupo, clave_grupo, nombre_grupo FROM grupos WHERE estatus_grupo = 'ALTA'");
-$alumnos = null;
+$idGrupo = (int)($_GET["id_grupo"] ?? $_GET["idgrupo"] ?? 0);
+$soloMaestro = esMaestro();$idProfSesion = $soloMaestro ? (int)$_SESSION["id_profesor"] : 0;
 
-if ($idgrupo > 0) {
-    $sql = "SELECT a.idalumn, a.matricula_al, CONCAT(a.nombre_al, ' ', a.apaterno_al, ' ', a.amaterno_al) AS alumno, a.mail_al
-            FROM grupo_alumnos ga
-            INNER JOIN alumnos a ON ga.idalumn = a.idalumn
-            WHERE ga.idgrupo = $idgrupo AND a.estatus_al = 'ALTA'";
-    $alumnos = $conexion->query($sql);
+if ($soloMaestro) {
+    $stmt =$conexion->prepare(
+        "SELECT DISTINCT g.ID_GRUPOS, g.NOMBRE_GRUPO
+         FROM grupos g
+         INNER JOIN grupo_alumno ga ON ga.ID_GRUPOS = g.ID_GRUPOS AND ga.ESTATUS = 'ALTA'
+         INNER JOIN asignatura s ON s.ID_ALUMNOS = ga.ID_ALUMNOS
+         WHERE g.ESTATUS = 'ALTA' AND s.ID_PROFESORES = ?
+         ORDER BY g.NOMBRE_GRUPO"
+    );
+    $stmt->bind_param("i", $idProfSesion);
+    $stmt->execute();$grupos = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);$stmt->close();
+} else {
+    $grupos =$conexion->query("SELECT ID_GRUPOS, NOMBRE_GRUPO FROM grupos WHERE ESTATUS = 'ALTA' ORDER BY NOMBRE_GRUPO")->fetch_all(MYSQLI_ASSOC);
+}
+
+$grupo = null;
+$filas = [];
+
+if ($idGrupo > 0) {
+    $stmt =$conexion->prepare("SELECT ID_GRUPOS, NOMBRE_GRUPO FROM grupos WHERE ID_GRUPOS = ?");
+    $stmt->bind_param("i", $idGrupo);$stmt->execute();
+    $grupo =$stmt->get_result()->fetch_assoc() ?: null;
+    $stmt->close();
+
+    if ($grupo !== null) {
+        if ($soloMaestro) {
+            $stmt =$conexion->prepare(
+                "SELECT DISTINCT a.MATRICULA,
+                        CONCAT(a.NOMBRE, ' ', a.APELLIDO_PATERNO, ' ', a.APELLIDO_MATERNO) AS ALUMNO,
+                        a.CORREO
+                 FROM grupo_alumno ga
+                 INNER JOIN alumnos a ON a.ID_ALUMNOS = ga.ID_ALUMNOS
+                 INNER JOIN asignatura s ON s.ID_ALUMNOS = a.ID_ALUMNOS AND s.ID_PROFESORES = ?
+                 WHERE ga.ID_GRUPOS = ? AND ga.ESTATUS = 'ALTA' AND a.ESTATUS = 'ALTA'
+                 ORDER BY a.APELLIDO_PATERNO, a.APELLIDO_MATERNO, a.NOMBRE"
+            );
+            $stmt->bind_param("ii", $idProfSesion,$idGrupo);
+        } else {
+            $stmt =$conexion->prepare(
+                "SELECT a.MATRICULA,
+                        CONCAT(a.NOMBRE, ' ', a.APELLIDO_PATERNO, ' ', a.APELLIDO_MATERNO) AS ALUMNO,
+                        a.CORREO
+                 FROM grupo_alumno ga
+                 INNER JOIN alumnos a ON a.ID_ALUMNOS = ga.ID_ALUMNOS
+                 WHERE ga.ID_GRUPOS = ? AND ga.ESTATUS = 'ALTA' AND a.ESTATUS = 'ALTA'
+                 ORDER BY a.APELLIDO_PATERNO, a.APELLIDO_MATERNO, a.NOMBRE"
+            );
+            $stmt->bind_param("i", $idGrupo);
+        }
+        $stmt->execute();$filas = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);$stmt->close();
+    }
+}
+
+if (isset($_GET["descargar"]) && $grupo !== null && count($filas) > 0) {
+    header("Content-Type: application/vnd.ms-excel; charset=utf-8");
+    header("Content-Disposition: attachment; filename=\"reporte_alumnos_grupo_" . (int)$idGrupo . ".xls\"");
+    echo "\xEF\xBB\xBF<table border='1'>";
+    echo "<tr><th colspan='4'>Reporte: Alumnos por Grupo — " . h($grupo["NOMBRE_GRUPO"]) . "</th></tr>";
+    echo "<tr><th>#</th><th>Matrícula</th><th>Alumno</th><th>Correo Electrónico</th></tr>";
+    foreach ($filas as $i =>$f) {
+        echo "<tr><td>" . ($i + 1) . "</td><td>" . h($f["MATRICULA"]) . "</td><td>" . h($f["ALUMNO"]) . "</td><td>" . h($f["CORREO"]) . "</td></tr>";
+    }
+    echo "</table>";
+    exit;
 }
 ?>
-
 <!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Reporte: Alumnos por grupo</title>
-    <style>
-        body { background-color: #f3f1f4; }
-        .formulario {
-            background-color: white;
-            max-width: 900px;
-            margin: 30px auto;
-            border-radius: 5px;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.15);
-            overflow: hidden;
-        }
-        .titulo {
-            background-color: #172554;
-            color: white;
-            padding: 15px;
-            text-align: center;
-        }
-        .contenido { padding: 25px; }
-        .btn-sae { background-color: #9f1239; color: white; border: none; padding: 8px 16px; border-radius: 4px; }
-        .btn-sae:hover { background-color: #881337; color: white; }
-        .pie { text-align: center; padding: 15px; color: #666; font-size: 0.9rem; border-top: 1px solid #eee; }
-        @media print { nav, .navbar, .btn, form, .pie, .no-print { display: none !important; } }
-    </style>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reporte: Alumnos por Grupo - SAE MELC</title>
+    <link href="<?= $base ?>/assets/css/bootstrap.min.css" rel="stylesheet">
 </head>
 <body>
+<?php include_once("../navegacion/nav.php"); ?>
 
-<div class="container">
-    <div class="formulario">
-        <div class="titulo">
-            <h2 class="m-0">Reporte: Alumnos por Grupo</h2>
+<div class="container mt-5">
+    <div class="card shadow">
+        <div class="card-header bg-sae-zafiro text-center py-3">
+            <h2 class="mb-0">Reporte: Alumnos por Grupo</h2>
         </div>
-
-        <div class="contenido">
-            <form method="GET" action="rep_alumnos_grupo.php" class="row align-items-end mb-4 no-print">
-                <div class="col-md-9 mb-2">
-                    <label class="font-weight-bold">Selecciona Grupo</label>
-                    <select name="idgrupo" class="form-control" required>
-                        <option value="">Selecciona un grupo...</option>
-                        <?php if ($grupos): ?>
-                            <?php while ($g = $grupos->fetch_assoc()): ?>
-                                <option value="<?php echo $g['idgrupo']; ?>" <?php echo ($idgrupo == $g['idgrupo']) ? 'selected' : ''; ?>>
-                                    <?php echo htmlspecialchars($g['clave_grupo'] . ' - ' . $g['nombre_grupo']); ?>
+        <div class="card-body p-4">
+            <form method="GET" class="mb-4 no-imprimir">
+                <label class="form-label fw-bold">Selecciona Grupo</label>
+                <div class="row g-2">
+                    <div class="col-md-9">
+                        <select name="id_grupo" class="form-select" required>
+                            <option value="">Selecciona un grupo...</option>
+                            <?php foreach ($grupos as$g) { ?>
+                                <option value="<?= $g["ID_GRUPOS"] ?>" <?= $idGrupo === (int)$g["ID_GRUPOS"] ? "selected" : "" ?>>
+                                    <?= h($g["NOMBRE_GRUPO"]) ?>
                                 </option>
-                            <?php endwhile; ?>
-                        <?php endif; ?>
-                    </select>
-                </div>
-                <div class="col-md-3 mb-2">
-                    <button type="submit" class="btn btn-secondary w-100">Generar Reporte</button>
+                            <?php } ?>
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <button type="submit" class="btn btn-secondary w-100">Generar Reporte</button>
+                    </div>
                 </div>
             </form>
 
-            <?php if ($idgrupo > 0): ?>
-                <div class="d-flex justify-content-end mb-3 no-print">
-                    <button onclick="window.print();" class="btn btn-outline-dark">🖨️ Imprimir / Guardar PDF</button>
+            <?php if ($grupo !== null) { ?>
+                <div class="d-flex justify-content-end gap-2 mb-3 no-imprimir">
+                    <?php if (count($filas) > 0) { ?>
+                        <a href="?id_grupo=<?= $idGrupo ?>&descargar=1" class="btn btn-success btn-sm">Descargar Excel</a>
+                    <?php } ?>
+                    <button type="button" class="btn btn-outline-secondary btn-sm" onclick="window.print()">Imprimir / Guardar PDF</button>
                 </div>
 
                 <div class="table-responsive">
-                    <table class="table table-bordered table-striped">
-                        <thead style="background-color: #212529; color: white;">
+                    <table class="table table-bordered table-striped align-middle">
+                        <thead class="table-dark">
                             <tr>
-                                <th>#</th>
+                                <th style="width: 60px;">#</th>
                                 <th>Matrícula</th>
                                 <th>Alumno</th>
                                 <th>Correo Electrónico</th>
                             </tr>
                         </thead>
                         <tbody>
-                            <?php if ($alumnos && $alumnos->num_rows > 0): ?>
-                                <?php $i = 1; ?>
-                                <?php while ($row = $alumnos->fetch_assoc()): ?>
-                                    <tr>
-                                        <td><b><?php echo $i++; ?></b></td>
-                                        <td><?php echo htmlspecialchars($row['matricula_al']); ?></td>
-                                        <td><?php echo htmlspecialchars($row['alumno']); ?></td>
-                                        <td><?php echo htmlspecialchars($row['mail_al']); ?></td>
-                                    </tr>
-                                <?php endwhile; ?>
-                            <?php else: ?>
-                                <tr><td colspan="4" class="text-center py-3 text-muted">No hay alumnos inscritos en este grupo.</td></tr>
-                            <?php endif; ?>
+                            <?php if (count($filas) === 0) { ?>
+                                <tr><td colspan="4" class="text-center text-muted">No hay alumnos inscritos en este grupo.</td></tr>
+                            <?php } ?>
+                            <?php foreach ($filas as $i =>$f) { ?>
+                                <tr>
+                                    <td class="fw-bold"><?= $i + 1 ?></td>
+                                    <td><?= h($f["MATRICULA"]) ?></td>
+                                    <td><?= h($f["ALUMNO"]) ?></td>
+                                    <td><?= h($f["CORREO"]) ?></td>
+                                </tr>
+                            <?php } ?>
                         </tbody>
                     </table>
                 </div>
-            <?php endif; ?>
+            <?php } ?>
         </div>
-
-        <div class="pie">Reporte de alumnos por grupo - Emmanuel Lopez Cornejo</div>
+        <div class="card-footer text-center text-muted small">
+            Reporte de alumnos por grupo - Lopez Cornejo Martin Emmanuel
+        </div>
     </div>
 </div>
-
+<script src="<?= $base ?>/assets/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>

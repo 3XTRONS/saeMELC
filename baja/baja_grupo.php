@@ -1,18 +1,14 @@
 <?php
-include_once("../conexion.php");
+require_once __DIR__ . "/../conexion.php";
+requerirRol(['ADMINISTRADOR']);
 
-$id = 0;
-if (isset($_GET['id'])) {
-    $id = (int)$_GET['id'];
-} elseif (isset($_GET['idgrupo'])) {
-    $id = (int)$_GET['idgrupo'];
-}
-
+$id = (int)($_GET["id"] ?? 0);
 if ($id > 0) {
-    $sql = "UPDATE grupos SET estatus_grupo = 'BAJA' WHERE idgrupo = $id";
-    $conexion->query($sql);
+    $stmt = $conexion->prepare("UPDATE grupos SET ESTATUS = 'BAJA' WHERE ID_GRUPOS = ?");
+    $stmt->bind_param("i", $id);
+    $stmt->execute();
+    $stmt->close();
 }
-
-header("Location: ../crude/crude_grupos.php");
+header("Location: " . $base . "/crude/crude_grupos.php");
 exit;
 ?>

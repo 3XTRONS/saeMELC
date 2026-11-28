@@ -1,98 +1,60 @@
 <?php
-include_once("../conexion.php");
-include_once("../navegacion/nav.php");
+require_once __DIR__ . "/../conexion.php";
+requerirRol(['ADMINISTRADOR']);
 
-$mensaje = "";
+if ($_SERVER["REQUEST_METHOD"] === "POST") {
+    $nom  = trim($_POST["nombre_grupo"]);
+    $tur  = trim($_POST["turno"]);
+    $sem  = trim($_POST["semestre"]);
+    $desc = trim($_POST["descripcion"]);
 
-if ($_SERVER["REQUEST_METHOD"] == "POST") {
-    $clave_grupo  = trim($_POST['clave_grupo'] ?? '');
-    $nombre_grupo = trim($_POST['descripcion'] ?? ''); 
-
-    if (!empty($clave_grupo) && !empty($nombre_grupo)) {
-        $stmt = $conexion->prepare("INSERT INTO grupos (clave_grupo, nombre_grupo, estatus_grupo) VALUES (?, ?, 'ALTA')");
-        if ($stmt) {
-            $stmt->bind_param("ss", $clave_grupo, $nombre_grupo);
-            if ($stmt->execute()) {
-                $mensaje = "<div class='alert alert-success mt-3'>¡Grupo registrado correctamente!</div>";
-            } else {
-                $mensaje = "<div class='alert alert-danger mt-3'>Error al registrar: " . htmlspecialchars($stmt->error) . "</div>";
-            }
-            $stmt->close();
-        }
-    } else {
-        $mensaje = "<div class='alert alert-warning mt-3'>Por favor completa la clave y la descripción.</div>";
-    }
+    $stmt = $conexion->prepare("INSERT INTO grupos (NOMBRE_GRUPO, TURNO, SEMESTRE, DESCRIPCION, ESTATUS) VALUES (?, ?, ?, ?, 'ALTA')");
+    $stmt->bind_param("ssss", $nom, $tur, $sem, $desc);
+    $stmt->execute();
+    $stmt->close();
+    header("Location: " . $base . "/crude/crude_grupos.php");
+    exit;
 }
 ?>
-
 <!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Registro de Grupos</title>
-    <style>
-        body { background-color: #f3f1f4; }
-        .formulario {
-            background-color: white;
-            max-width: 800px;
-            margin: 40px auto;
-            border-radius: 5px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.15);
-            overflow: hidden;
-        }
-        .titulo {
-            background-color: #172554;
-            color: white;
-            padding: 15px;
-            text-align: center;
-        }
-        .titulo h2 { margin: 0; font-size: 1.8rem; font-weight: 500; }
-        .contenido { padding: 30px; }
-        .btn-custom { background-color: #9f1239; color: white; border: none; padding: 8px 16px; border-radius: 4px; }
-        .btn-custom:hover { background-color: #881337; color: white; }
-        .pie {
-            text-align: center;
-            padding: 15px;
-            color: #666;
-            font-size: 0.9rem;
-            border-top: 1px solid #eee;
-        }
-    </style>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Registrar Grupo - SAE MELC</title>
+    <link href="<?= $base ?>/assets/css/bootstrap.min.css" rel="stylesheet">
 </head>
 <body>
+<?php include __DIR__ . "/../navegacion/nav.php"; ?>
 
-<div class="container">
-    <div class="formulario">
-        <div class="titulo">
-            <h2>Registro de Grupos</h2>
+<div class="container mt-5">
+    <div class="card shadow">
+        <div class="card-header bg-sae-zafiro text-center">
+            <h2 class="mb-0">Registrar Grupo</h2>
         </div>
-        
-        <div class="contenido">
-            <?php echo $mensaje; ?>
-
-            <form method="POST" action="reg_grupo.php">
-                <div class="form-group mb-3">
-                    <label class="font-weight-bold">Clave del grupo</label>
-                    <input type="text" name="clave_grupo" class="form-control" placeholder="Ej. 406" required>
+        <div class="card-body">
+            <form method="POST">
+                <div class="row g-3">
+                    <div class="col-md-6"><label class="form-label">Nombre del Grupo</label><input type="text" name="nombre_grupo" class="form-control" required placeholder="Ej. 406 - Tecnologías de la Información"></div>
+                    <div class="col-md-3">
+                        <label class="form-label">Turno</label>
+                        <select name="turno" class="form-select">
+                            <option value="Matutino">Matutino</option>
+                            <option value="Vespertino">Vespertino</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3"><label class="form-label">Semestre</label><input type="text" name="semestre" class="form-control" required placeholder="Ej. 4"></div>
+                    <div class="col-12"><label class="form-label">Descripción</label><input type="text" name="descripcion" class="form-control"></div>
                 </div>
-
-                <div class="form-group mb-4">
-                    <label class="font-weight-bold">Descripcion</label>
-                    <input type="text" name="descripcion" class="form-control" placeholder="desc." required>
-                </div>
-
-                <div class="d-flex align-items-center gap-3">
-                    <button type="submit" class="btn btn-custom mr-2">Registrar grupo</button>
-                    <a href="../crude/crude_grupos.php" class="btn btn-outline-secondary">Regresar al catálogo</a>
+                <div class="mt-4 d-flex gap-2">
+                    <button type="submit" class="btn btn-sae">Guardar Grupo</button>
+                    <a href="<?= $base ?>/crude/crude_grupos.php" class="btn btn-outline-secondary">Cancelar</a>
                 </div>
             </form>
         </div>
-
-        <div class="pie">
-            Registro de grupos - Programación II Emmanuel Lopez Cornejo
-        </div>
+        <div class="card-footer text-center text-muted">Registro de Grupos - Lopez Cornejo Martin Emmanuel</div>
     </div>
 </div>
-
+<script src="<?= $base ?>/assets/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>

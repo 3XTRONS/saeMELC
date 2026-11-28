@@ -1,205 +1,193 @@
 <?php
 include_once("../conexion.php");
-include_once("../navegacion/nav.php");
+requerirRol(['ADMINISTRADOR']);
 
 $mensaje = "";
 
-// 1. Cambiar estatus (ALTA <-> BAJA) al dar clic en 🛠️
-if (isset($_GET['cambiar_estatus'])) {
-    $id_ga = intval($_GET['cambiar_estatus']);
-    $estatus_actual = $_GET['estatus'] ?? 'ALTA';
-    $nuevo_estatus = ($estatus_actual === 'ALTA') ? 'BAJA' : 'ALTA';
+// Inscribir o actualizar estatuus
+if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["inscribir"])) {
+    $idGrupo = (int)($_POST["id_grupo"] ?? 0);
+    $idAlum  = (int)($_POST["id_alumno"] ?? 0);
+    $estatus = isset($_POST["estatus_activo"]) ? "ALTA" : "BAJA";
 
-    $stmt_est = $conexion->prepare("UPDATE grupo_alumnos SET estatus = ? WHERE id_ga = ?");
-    if ($stmt_est) {
-        $stmt_est->bind_param("si", $nuevo_estatus, $id_ga);
-        if ($stmt_est->execute()) {
-            $mensaje = "<div class='alert alert-info mt-3'>Estatus actualizado a <b>$nuevo_estatus</b>.</div>";
-        }
-        $stmt_est->close();
-    }
-}
-
-// 2. Eliminar registro al dar clic en 🗑️
-if (isset($_GET['eliminar'])) {
-    $id_ga = intval($_GET['eliminar']);
-    $stmt_del = $conexion->prepare("DELETE FROM grupo_alumnos WHERE id_ga = ?");
-    if ($stmt_del) {
-        $stmt_del->bind_param("i", $id_ga);
-        if ($stmt_del->execute()) {
-            $mensaje = "<div class='alert alert-success mt-3'>Inscripción eliminada correctamente.</div>";
-        }
-        $stmt_del->close();
-    }
-}
-
-// 3. Registrar nueva inscripción
-if ($_SERVER["REQUEST_METHOD"] == "POST") {
-    $idgrupo = $_POST['idgrupo'] ?? '';
-    $idalumn = $_POST['idalumn'] ?? '';
-    $estatus = isset($_POST['estatus']) ? 'ALTA' : 'BAJA';
-
-    if (!empty($idgrupo) && !empty($idalumn)) {
-        $stmt = $conexion->prepare("INSERT INTO grupo_alumnos (idgrupo, idalumn, estatus) VALUES (?, ?, ?)");
-        $stmt->bind_param("iis", $idgrupo, $idalumn, $estatus);
-
-        if ($stmt->execute()) {
-            $mensaje = "<div class='alert alert-success mt-3'>¡Alumno inscrito al grupo correctamente!</div>";
-        } else {
-            $mensaje = "<div class='alert alert-danger mt-3'>Error al inscribir: " . $stmt->error . "</div>";
-        }
+    if ($idGrupo > 0 && $idAlum > 0) {
+        $stmt = $conexion->prepare(
+            "INSERT INTO grupo_alumno (ID_GRUPOS, ID_ALUMNOS, ESTATUS) VALUES (?, ?, ?)
+             ON DUPLICATE KEY UPDATE ESTATUS = VALUES(ESTATUS)"
+        );
+        $stmt->bind_param("iis", $idGrupo, $idAlum, $estatus);
+        $stmt->execute();
         $stmt->close();
+        $mensaje = '<div class="alert alert-success">Inscripción guardada correctamente.</div>';
     }
 }
 
-$grupos = $conexion->query("SELECT idgrupo, clave_grupo, nombre_grupo FROM grupos WHERE estatus_grupo = 'ALTA'");
-$alumnos = $conexion->query("SELECT idalumn, matricula_al, nombre_al, apaterno_al, amaterno_al FROM alumnos WHERE estatus_al = 'ALTA'");
-$inscritos = $conexion->query("SELECT ga.id_ga, ga.idgrupo, g.clave_grupo, ga.idalumn, a.matricula_al, CONCAT(a.nombre_al, ' ', a.apaterno_al, ' ', a.amaterno_al) AS alumno, ga.estatus FROM grupo_alumnos ga JOIN grupos g ON ga.idgrupo = g.idgrupo JOIN alumnos a ON ga.idalumn = a.idalumn");
-?>
+// Dar de baja (cambia a BAJA sin eliminar lo de resgistro)
+if (isset($_GET["baja_g"], $_GET["baja_a"])) {
+    $g = (int)$_GET["baja_g"];
+    $a = (int)$_GET["baja_a"];
+    $stmt = $conexion->prepare("UPDATE grupo_alumno SET ESTATUS = 'BAJA' WHERE ID_GRUPOS = ? AND ID_ALUMNOS = ?");
+    $stmt->bind_param("ii", $g, $a);
+    $stmt->execute();
+    $stmt->close();
+    header("Location: inscripcion_grupo.php");
+    exit;
+}
 
+// Reactivar (cambia de BAJA a ALTA)
+if (isset($_GET["activar_g"], $_GET["activar_a"])) {
+    $g = (int)$_GET["activar_g"];
+    $a = (int)$_GET["activar_a"];
+    $stmt = $conexion->prepare("UPDATE grupo_alumno SET ESTATUS = 'ALTA' WHERE ID_GRUPOS = ? AND ID_ALUMNOS = ?");
+    $stmt->bind_param("ii", $g, $a);
+    $stmt->execute();
+    $stmt->close();
+    header("Location: inscripcion_grupo.php");
+    exit;
+}
+
+// Eliminar definitivamente de grupo_alumno
+if (isset($_GET["elim_g"], $_GET["elim_a"])) {
+    $g = (int)$_GET["elim_g"];
+    $a = (int)$_GET["elim_a"];
+    $stmt = $conexion->prepare("DELETE FROM grupo_alumno WHERE ID_GRUPOS = ? AND ID_ALUMNOS = ?");
+    $stmt->bind_param("ii", $g, $a);
+    $stmt->execute();
+    $stmt->close();
+    header("Location: inscripcion_grupo.php");
+    exit;
+}
+
+$grupos  = $conexion->query("SELECT ID_GRUPOS, NOMBRE_GRUPO FROM grupos WHERE ESTATUS = 'ALTA' ORDER BY NOMBRE_GRUPO");
+$alumnos = $conexion->query("SELECT ID_ALUMNOS, MATRICULA, NOMBRE, APELLIDO_PATERNO, APELLIDO_MATERNO FROM alumnos WHERE ESTATUS = 'ALTA' ORDER BY APELLIDO_PATERNO, NOMBRE");
+
+$inscritos = $conexion->query(
+    "SELECT ga.ID_GRUPOS, g.NOMBRE_GRUPO, ga.ID_ALUMNOS, a.MATRICULA,
+            CONCAT(a.NOMBRE, ' ', a.APELLIDO_PATERNO, ' ', a.APELLIDO_MATERNO) AS alumno,
+            ga.ESTATUS
+     FROM grupo_alumno ga
+     INNER JOIN grupos g ON g.ID_GRUPOS = ga.ID_GRUPOS
+     INNER JOIN alumnos a ON a.ID_ALUMNOS = ga.ID_ALUMNOS
+     WHERE g.ESTATUS = 'ALTA' AND a.ESTATUS = 'ALTA'
+     ORDER BY ga.ID_GRUPOS ASC, a.APELLIDO_PATERNO ASC, a.NOMBRE ASC"
+);
+?>
 <!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Inscripción de alumnos a grupos</title>
-    <style>
-        body { background-color: #f8f9fa; }
-        .form-container {
-            max-width: 800px;
-            margin: 40px auto;
-            background: #ffffff;
-            border-radius: 8px;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.15);
-            overflow: hidden;
-        }
-        .form-header {
-            background-color: #1a2b4c;
-            color: white;
-            padding: 20px;
-            text-align: center;
-        }
-        .form-body { padding: 30px; }
-        .btn-custom {
-            background-color: #800020;
-            color: white;
-        }
-        .btn-custom:hover { background-color: #600018; color: white; }
-        .footer-text {
-            text-align: center;
-            padding: 15px;
-            font-size: 0.9em;
-            color: #6c757d;
-            border-top: 1px solid #dee2e6;
-        }
-        .btn-emoji {
-            border: none;
-            padding: 4px 8px;
-            border-radius: 4px;
-            text-decoration: none;
-            display: inline-block;
-        }
-        .btn-edit { background-color: #0d6efd; color: white; }
-        .btn-edit:hover { background-color: #0b5ed7; color: white; }
-        .btn-delete { background-color: #dc3545; color: white; }
-        .btn-delete:hover { background-color: #bb2d3b; color: white; }
-    </style>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Inscripción de alumnos a grupos - SAE MELC</title>
+    <link href="<?= $base ?>/assets/css/bootstrap.min.css" rel="stylesheet">
 </head>
 <body>
+<?php include_once("../navegacion/nav.php"); ?>
 
-<div class="container">
-    <div class="form-container">
-        <div class="form-header">
-            <h2>Inscripción de alumnos a grupos</h2>
+<div class="container mt-5">
+    <div class="card shadow">
+        <div class="card-header bg-sae-zafiro text-center">
+            <h2 class="mb-0">Inscripción de alumnos a grupos</h2>
         </div>
-        
-        <div class="form-body">
-            <?php echo $mensaje; ?>
 
-            <form method="POST" action="">
-                <div class="form-group mb-3">
-                    <label for="idgrupo" class="font-weight-bold">Id grupo</label>
-                    <select name="idgrupo" id="idgrupo" class="form-control" required>
+        <div class="card-body">
+            <?= $mensaje ?>
+
+            <form method="POST" action="inscripcion_grupo.php">
+                <input type="hidden" name="inscribir" value="1">
+
+                <div class="mb-3">
+                    <label class="form-label">Id grupo</label>
+                    <select name="id_grupo" class="form-select" required>
                         <option value="">Selecciona un grupo...</option>
-                        <?php while ($row = $grupos->fetch_assoc()): ?>
-                            <option value="<?php echo $row['idgrupo']; ?>">
-                                <?php echo $row['clave_grupo'] . " - " . $row['nombre_grupo']; ?>
-                            </option>
-                        <?php endwhile; ?>
+                        <?php while ($g = $grupos->fetch_assoc()) { ?>
+                            <option value="<?= $g['ID_GRUPOS'] ?>"><?= h($g['NOMBRE_GRUPO']) ?></option>
+                        <?php } ?>
                     </select>
                 </div>
 
-                <div class="form-group mb-3">
-                    <label for="idalumn" class="font-weight-bold">Id alumno</label>
-                    <select name="idalumn" id="idalumn" class="form-control" required>
+                <div class="mb-3">
+                    <label class="form-label">Id alumno</label>
+                    <select name="id_alumno" class="form-select" required>
                         <option value="">Selecciona un alumno...</option>
-                        <?php while ($row = $alumnos->fetch_assoc()): ?>
-                            <option value="<?php echo $row['idalumn']; ?>">
-                                <?php echo $row['matricula_al'] . " - " . $row['nombre_al'] . " " . $row['apaterno_al']; ?>
+                        <?php while ($a = $alumnos->fetch_assoc()) { ?>
+                            <option value="<?= $a['ID_ALUMNOS'] ?>">
+                                <?= h($a['MATRICULA'] . " - " . $a['NOMBRE'] . " " . $a['APELLIDO_PATERNO'] . " " . $a['APELLIDO_MATERNO']) ?>
                             </option>
-                        <?php endwhile; ?>
+                        <?php } ?>
                     </select>
                 </div>
 
-                <div class="form-check mb-4">
-                    <input class="form-check-input" type="checkbox" name="estatus" id="estatus" checked>
-                    <label class="form-check-label" for="estatus">
-                        Estatus activo
-                    </label>
+                <div class="form-check mb-3">
+                    <input class="form-check-input" type="checkbox" name="estatus_activo" id="estatusActivo" checked>
+                    <label class="form-check-label" for="estatusActivo">Estatus activo</label>
                 </div>
 
-                <button type="submit" class="btn btn-custom">Inscribir alumno</button>
+                <button type="submit" class="btn btn-sae">Inscribir alumno</button>
             </form>
-        </div>
 
-        <div class="footer-text">
-            Inscripción de alumnos - Programación II Emmanuel Lopez Cornejo
-        </div>
-    </div>
+            <hr class="my-4">
 
-    <!-- TABLA DE ALUMNOS INSCRITOS -->
-    <div class="container mt-4 mb-5" style="max-width: 800px;">
-        <h3 class="mb-3">Alumnos inscritos</h3>
-        <table class="table table-bordered table-striped">
-            <thead class="thead-dark">
-                <tr>
-                    <th>Id grupo</th>
-                    <th>Grupo</th>
-                    <th>Id alumno</th>
-                    <th>Matrícula</th>
-                    <th>Alumno</th>
-                    <th>Estatus</th>
-                    <th class="text-center">Acciones</th>
-                </tr>
-            </thead>
-            <tbody>
-                <?php if ($inscritos->num_rows > 0): ?>
-                    <?php while ($row = $inscritos->fetch_assoc()): ?>
+            <h4 class="mb-3">Alumnos inscritos</h4>
+
+            <div class="table-responsive">
+                <table class="table table-bordered table-striped align-middle">
+                    <thead class="table-dark">
                         <tr>
-                            <td><?php echo $row['idgrupo']; ?></td>
-                            <td><?php echo $row['clave_grupo']; ?></td>
-                            <td><?php echo $row['idalumn']; ?></td>
-                            <td><?php echo $row['matricula_al']; ?></td>
-                            <td><?php echo $row['alumno']; ?></td>
-                            <td>
-                                <span class="badge <?php echo ($row['estatus'] == 'ALTA') ? 'badge-success' : 'badge-danger'; ?>">
-                                    <?php echo $row['estatus']; ?>
-                                </span>
-                            </td>
-                            <td class="text-center">
-                                <a href="inscripcion_grupo.php?cambiar_estatus=<?php echo $row['id_ga']; ?>&estatus=<?php echo $row['estatus']; ?>" class="btn-emoji btn-edit" title="Cambiar Estatus (ALTA/BAJA)">🛠️</a>
-                                <a href="inscripcion_grupo.php?eliminar=<?php echo $row['id_ga']; ?>" class="btn-emoji btn-delete" onclick="return confirm('¿Eliminar inscripción?');" title="Eliminar de BD">🗑️</a>
-                            </td>
+                            <th>Id grupo</th>
+                            <th>Grupo</th>
+                            <th>Id alumno</th>
+                            <th>Matrícula</th>
+                            <th>Alumno</th>
+                            <th>Estatus</th>
+                            <th>Acciones</th>
                         </tr>
-                    <?php endwhile; ?>
-                <?php else: ?>
-                    <tr>
-                        <td colspan="7" class="text-center">No hay alumnos inscritos aún.</td>
-                    </tr>
-                <?php endif; ?>
-            </tbody>
-        </table>
+                    </thead>
+                    <tbody>
+                        <?php if ($inscritos->num_rows === 0) { ?>
+                            <tr><td colspan="7" class="text-center text-muted">No hay alumnos inscritos en grupos.</td></tr>
+                        <?php } ?>
+                        <?php while ($f = $inscritos->fetch_assoc()) { ?>
+                            <tr>
+                                <td><?= $f['ID_GRUPOS'] ?></td>
+                                <td><?= h($f['NOMBRE_GRUPO']) ?></td>
+                                <td><?= $f['ID_ALUMNOS'] ?></td>
+                                <td><?= h($f['MATRICULA']) ?></td>
+                                <td><?= h($f['alumno']) ?></td>
+                                <td>
+                                    <?php if ($f['ESTATUS'] === 'ALTA') { ?>
+                                        <span class="badge bg-success">ALTA</span>
+                                    <?php } else { ?>
+                                        <span class="badge bg-secondary">BAJA</span>
+                                    <?php } ?>
+                                </td>
+                                <td>
+                                    <?php if ($f['ESTATUS'] === 'ALTA') { ?>
+                                        <a href="inscripcion_grupo.php?baja_g=<?= $f['ID_GRUPOS'] ?>&baja_a=<?= $f['ID_ALUMNOS'] ?>"
+                                           class="btn btn-outline-secondary btn-sm"
+                                           title="Dar de baja">❎</a>
+                                    <?php } else { ?>
+                                        <a href="inscripcion_grupo.php?activar_g=<?= $f['ID_GRUPOS'] ?>&activar_a=<?= $f['ID_ALUMNOS'] ?>"
+                                           class="btn btn-outline-success btn-sm"
+                                           title="Reactivar">🔄</a>
+                                    <?php } ?>
+                                    <a href="inscripcion_grupo.php?elim_g=<?= $f['ID_GRUPOS'] ?>&elim_a=<?= $f['ID_ALUMNOS'] ?>"
+                                       class="btn btn-outline-danger btn-sm"
+                                       title="Eliminar"
+                                       onclick="return confirm('¿Eliminar este registro definitivamente?');">🗑️</a>
+                                </td>
+                            </tr>
+                        <?php } ?>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="card-footer text-center text-muted">
+            Inscripción a grupos - Programación II Lopez Cornejo Martin Emmanuel
+        </div>
     </div>
 </div>
 
+<script src="<?= $base ?>/assets/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>

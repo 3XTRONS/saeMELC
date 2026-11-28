@@ -1,27 +1,14 @@
 <?php
-include_once("../conexion.php");
+require_once __DIR__ . "/../conexion.php";
+requerirRol(['ADMINISTRADOR']);
 
-if (isset($_GET['idprof'])) {
-    $idprof = intval($_GET['idprof']);
-
-    $sql = "UPDATE profesores SET estatus_prof = 'BAJA' WHERE idprof = ?";
-    
-    $stmt = $conexion->prepare($sql);
-    if ($stmt) {
-        $stmt->bind_param("i", $idprof);
-        if ($stmt->execute()) {
-            header("Location: ../crude/crude_profesores.php?status=baja_ok");
-            exit();
-        } else {
-            echo "Error al dar de baja: " . $stmt->error;
-        }
-        $stmt->close();
-    } else {
-        echo "Error en la consulta: " . $conexion->error;
-    }
-} else {
-    header("Location: ../crude/crude_profesores.php");
-    exit();
+$id = (int)($_GET["id"] ?? 0);
+if ($id > 0) {
+    $stmt = $conexion->prepare("UPDATE profesores SET ESTATUS = 'BAJA' WHERE ID_PROFESORES = ?");
+    $stmt->bind_param("i", $id);
+    $stmt->execute();
+    $stmt->close();
 }
-$conexion->close();
+header("Location: " . $base . "/crude/crude_profesores.php");
+exit;
 ?>

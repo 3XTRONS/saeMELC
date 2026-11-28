@@ -1,27 +1,14 @@
 <?php
 include_once("../conexion.php");
+requerirRol(['ADMINISTRADOR']);
 
-if (isset($_GET['idmat'])) {
-    $idmat = intval($_GET['idmat']);
-
-    $sql = "UPDATE materias SET estatus_mat = 'BAJA' WHERE idmat = ?";
-    
-    $stmt = $conexion->prepare($sql);
-    if ($stmt) {
-        $stmt->bind_param("i", $idmat);
-        if ($stmt->execute()) {
-            header("Location: ../crude/crude_materias.php?status=baja_ok");
-            exit();
-        } else {
-            echo "Error al dar de baja: " . $stmt->error;
-        }
-        $stmt->close();
-    } else {
-        echo "Error en la consulta: " . $conexion->error;
-    }
-} else {
-    header("Location: ../crude/crude_materias.php");
-    exit();
+$id = (int)($_GET["id"] ?? 0);
+if ($id > 0) {
+    $stmt = $conexion->prepare("UPDATE materias SET ESTATUS = 'BAJA' WHERE ID_MATERIAS = ?");
+    $stmt->bind_param("i", $id);
+    $stmt->execute();
+    $stmt->close();
 }
-$conexion->close();
+header("Location: " . $base . "/crude/crude_materias.php");
+exit;
 ?>

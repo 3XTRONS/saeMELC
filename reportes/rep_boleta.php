@@ -1,123 +1,183 @@
 <?php
 include_once("../conexion.php");
-include_once("../navegacion/nav.php");
+requerirLogin();
 
-$rol = (int)($_SESSION['id_puesto'] ?? 1);
+$esAl = esAlumno();
+$idAlumno = $esAl ? (int)($_SESSION["id_alumno"] ?? 0) : (int)($_GET["id_alumno"] ?? 0);
 
-// Si es Alumno (puesto 4 o superior distinto de Admin/Docente/Coordinador), solo puede ver su propia boleta
-if ($rol >= 4) {
-    if (!empty($_SESSION['idalumn'])) {
-        $idalumn = intval($_SESSION['idalumn']);
-    } else {
-        // Si no existe columna idalumn en usuarios, busca su ID en alumnos por su nombre de usuario
-        $nombre_sesion = $conexion->real_escape_string($_SESSION['nombre_usuario'] ?? '');
-        $busca = $conexion->query("SELECT idalumn FROM alumnos WHERE CONCAT(nombre_al, ' ', apaterno_al, ' ', amaterno_al) LIKE '%$nombre_sesion%' LIMIT 1");
-        $row_al = ($busca) ? $busca->fetch_assoc() : null;
-        $idalumn = intval($row_al['idalumn'] ?? 0);
-    }
-} else {
-    $idalumn = intval($_GET['idalumn'] ?? 0);
+$alumnos = [];
+if (!$esAl) {
+    $alumnos = $conexion->query("SELECT ID_ALUMNOS, MATRICULA, NOMBRE, APELLIDO_PATERNO, APELLIDO_MATERNO FROM alumnos WHERE ESTATUS = 'ALTA' ORDER BY APELLIDO_PATERNO, NOMBRE")->fetch_all(MYSQLI_ASSOC);
 }
 
-$alumnos_select = $conexion->query("SELECT idalumn, matricula_al, CONCAT(nombre_al, ' ', apaterno_al, ' ', amaterno_al) AS alumno FROM alumnos WHERE estatus_al = 'ALTA'");
-$boleta = null;
-$promedio = 0;
+$unidades = $conexion->query("SELECT ID_UNIDAD, DESCRIPCION FROM unidad WHERE ESTATUS = 'ALTA' ORDER BY ID_UNIDAD")->fetch_all(MYSQLI_ASSOC);
+$alumnoSel = null;
+$filas = [];
+$promedioGeneral = null;
 
-if ($idalumn > 0) {
-    $sql = "SELECT u.nombre_unidad, c.calificacion
-            FROM calificaciones c
-            INNER JOIN unidades u ON c.id_unidad = u.id_unidad
-            WHERE c.idalumn = $idalumn
-            ORDER BY u.id_unidad";
-    $boleta = $conexion->query($sql);
-    
-    $prom = $conexion->query("SELECT AVG(calificacion) as promedio FROM calificaciones WHERE idalumn = $idalumn");
-    if ($prom) {
-        $p = $prom->fetch_assoc();
-        $promedio = $p['promedio'] ?? 0;
+if ($idAlumno > 0) {
+    $stmt = $conexion->prepare("SELECT * FROM alumnos WHERE ID_ALUMNOS = ?");
+    $stmt->bind_param("i", $idAlumno);
+    $stmt->execute();
+    $alumnoSel = $stmt->get_result()->fetch_assoc() ?: null;
+    $stmt->close();
+
+    if ($alumnoSel !== null) {
+        $stmt = $conexion->prepare(
+            "SELECT m.ID_MATERIAS, m.CLAVE_MATERIA, m.NOMBRE_MATERIA,
+                    CONCAT(p.NOMBRE, ' ', p.APELLIDO_PATERNO) AS PROFESOR
+             FROM asignatura s
+             INNER JOIN materias m ON m.ID_MATERIAS = s.ID_MATERIAS
+             INNER JOIN profesores p ON p.ID_PROFESORES = s.ID_PROFESORES
+             WHERE s.ID_ALUMNOS = ?
+             ORDER BY m.CLAVE_MATERIA"
+        );
+        $stmt->bind_param("i", $idAlumno);
+        $stmt->execute();
+        $mats = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
+        $stmt->close();
+
+        $stmtCal = $conexion->prepare("SELECT ID_UNIDAD, CALIFICACION FROM calificaciones WHERE ID_ALUMNOS = ? AND ID_MATERIAS = ?");
+        $promediosMaterias = [];
+
+        foreach ($mats as $m) {
+            $idMat = (int)$m["ID_MATERIAS"];
+            $stmtCal->bind_param("ii", $idAlumno, $idMat);
+            $stmtCal->execute();
+            $resCal = $stmtCal->get_result();
+            $notas = [];
+            while ($rc = $resCal->fetch_assoc()) {
+                $notas[(int)$rc["ID_UNIDAD"]] = (float)$rc["CALIFICACION"];
+            }
+            $m["notas"] = $notas;
+            $m["promedio"] = count($notas) > 0 ? round(array_sum($notas) / count($notas), 2) : null;
+            if ($m["promedio"] !== null) {
+                $promediosMaterias[] = $m["promedio"];
+            }
+            $filas[] = $m;
+        }
+        $stmtCal->close();
+
+        if (count($promediosMaterias) > 0) {
+            $promedioGeneral = round(array_sum($promediosMaterias) / count($promediosMaterias), 2);
+        }
     }
+}
+
+if (isset($_GET["descargar"]) && $alumnoSel !== null && count($filas) > 0) {
+    $nomAl = $alumnoSel["MATRICULA"] . " - " . $alumnoSel["NOMBRE"] . " " . $alumnoSel["APELLIDO_PATERNO"] . " " . $alumnoSel["APELLIDO_MATERNO"];
+    header("Content-Type: application/vnd.ms-excel; charset=utf-8");
+    header("Content-Disposition: attachment; filename=\"boleta_alumno_" . (int)$idAlumno . ".xls\"");
+    echo "\xEF\xBB\xBF<table border='1'>";
+    echo "<tr><th colspan='" . (5 + count($unidades)) . "'>Boleta de Calificaciones — " . h($nomAl) . "</th></tr>";
+    echo "<tr><th>#</th><th>Materia</th><th>Profesor</th>";
+    foreach ($unidades as $u) { echo "<th>" . h($u["DESCRIPCION"]) . "</th>"; }
+    echo "<th>Promedio</th></tr>";
+    foreach ($filas as $i => $f) {
+        echo "<tr><td>" . ($i + 1) . "</td><td>" . h($f["CLAVE_MATERIA"] . " - " . $f["NOMBRE_MATERIA"]) . "</td><td>" . h($f["PROFESOR"]) . "</td>";
+        foreach ($unidades as $u) {
+            $idU = (int)$u["ID_UNIDAD"];
+            echo "<td>" . (isset($f["notas"][$idU]) ? $f["notas"][$idU] : "-") . "</td>";
+        }
+        echo "<td>" . ($f["promedio"] !== null ? $f["promedio"] : "-") . "</td></tr>";
+    }
+    echo "<tr><td colspan='" . (3 + count($unidades)) . "'><strong>Promedio General</strong></td><td><strong>" . ($promedioGeneral !== null ? $promedioGeneral : "-") . "</strong></td></tr>";
+    echo "</table>";
+    exit;
 }
 ?>
-
 <!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Reporte: Boleta de Calificaciones</title>
-    <style>
-        body { background-color: #f3f1f4; }
-        .formulario { background-color: white; max-width: 800px; margin: 30px auto; border-radius: 5px; box-shadow: 0 2px 10px rgba(0,0,0,0.15); overflow: hidden; }
-        .titulo { background-color: #172554; color: white; padding: 15px; text-align: center; }
-        .contenido { padding: 25px; }
-        .pie { text-align: center; padding: 15px; color: #666; font-size: 0.9rem; border-top: 1px solid #eee; }
-        @media print { nav, .navbar, .btn, form, .pie, .no-print { display: none !important; } }
-    </style>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reporte: Boleta de Calificaciones - SAE MELC</title>
+    <link href="<?= $base ?>/assets/css/bootstrap.min.css" rel="stylesheet">
 </head>
 <body>
+<?php include_once("../navegacion/nav.php"); ?>
 
-<div class="container">
-    <div class="formulario">
-        <div class="titulo"><h2 class="m-0">Boleta de Calificaciones</h2></div>
-        <div class="contenido">
-            <?php if ($rol < 4): ?>
-            <form method="GET" action="rep_boleta.php" class="row align-items-end mb-4 no-print">
-                <div class="col-md-9 mb-2">
-                    <label class="font-weight-bold">Selecciona Alumno</label>
-                    <select name="idalumn" class="form-control" required>
-                        <option value="">Selecciona un alumno...</option>
-                        <?php if ($alumnos_select): ?>
-                            <?php while ($al = $alumnos_select->fetch_assoc()): ?>
-                                <option value="<?php echo $al['idalumn']; ?>" <?php echo ($idalumn == $al['idalumn']) ? 'selected' : ''; ?>>
-                                    <?php echo htmlspecialchars($al['matricula_al'] . ' - ' . $al['alumno']); ?>
-                                </option>
-                            <?php endwhile; ?>
-                        <?php endif; ?>
-                    </select>
-                </div>
-                <div class="col-md-3 mb-2">
-                    <button type="submit" class="btn btn-secondary w-100">Generar Boleta</button>
-                </div>
-            </form>
-            <?php endif; ?>
+<div class="container mt-5">
+    <div class="card shadow">
+        <div class="card-header bg-sae-zafiro text-center py-3">
+            <h2 class="mb-0">Reporte: Boleta de Calificaciones</h2>
+        </div>
+        <div class="card-body p-4">
+            <?php if (!$esAl) { ?>
+                <form method="GET" class="mb-4 no-imprimir">
+                    <label class="form-label fw-bold">Selecciona Alumno</label>
+                    <div class="row g-2">
+                        <div class="col-md-9">
+                            <select name="id_alumno" class="form-select" required>
+                                <option value="">Selecciona un alumno...</option>
+                                <?php foreach ($alumnos as $a) { ?>
+                                    <option value="<?= $a["ID_ALUMNOS"] ?>" <?= $idAlumno === (int)$a["ID_ALUMNOS"] ? "selected" : "" ?>>
+                                        <?= h($a["MATRICULA"] . " - " . $a["NOMBRE"] . " " . $a["APELLIDO_PATERNO"] . " " . $a["APELLIDO_MATERNO"]) ?>
+                                    </option>
+                                <?php } ?>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <button type="submit" class="btn btn-secondary w-100">Generar Reporte</button>
+                        </div>
+                    </div>
+                </form>
+            <?php } ?>
 
-            <?php if ($idalumn > 0): ?>
-                <div class="d-flex justify-content-end mb-3 no-print">
-                    <button onclick="window.print();" class="btn btn-outline-dark">🖨️ Imprimir Boleta</button>
+            <?php if ($alumnoSel !== null) { ?>
+                <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
+                    <div>
+                        <strong>Alumno:</strong> <?= h($alumnoSel["MATRICULA"] . " - " . $alumnoSel["NOMBRE"] . " " . $alumnoSel["APELLIDO_PATERNO"] . " " . $alumnoSel["APELLIDO_MATERNO"]) ?>
+                    </div>
+                    <div class="d-flex align-items-center gap-2">
+                        <?php if ($promedioGeneral !== null) { ?>
+                            <span class="badge badge-sae fs-6">Promedio: <?= h($promedioGeneral) ?></span>
+                        <?php } ?>
+                        <?php if (count($filas) > 0) { ?>
+                            <a href="?id_alumno=<?= $idAlumno ?>&descargar=1" class="btn btn-success btn-sm no-imprimir">Descargar Excel</a>
+                        <?php } ?>
+                        <button type="button" class="btn btn-outline-secondary btn-sm no-imprimir" onclick="window.print()">Imprimir / Guardar PDF</button>
+                    </div>
                 </div>
 
                 <div class="table-responsive">
-                    <table class="table table-bordered">
-                        <thead style="background-color: #212529; color: white;">
+                    <table class="table table-bordered table-striped align-middle">
+                        <thead class="table-dark">
                             <tr>
-                                <th>Unidad Evaluada</th>
-                                <th class="text-center">Calificación</th>
+                                <th style="width: 50px;">#</th>
+                                <th>Materia</th>
+                                <th>Profesor</th>
+                                <?php foreach ($unidades as $u) { ?><th><?= h($u["DESCRIPCION"]) ?></th><?php } ?>
+                                <th>Promedio</th>
                             </tr>
                         </thead>
                         <tbody>
-                            <?php if ($boleta && $boleta->num_rows > 0): ?>
-                                <?php while ($row = $boleta->fetch_assoc()): ?>
-                                    <tr>
-                                        <td><?php echo htmlspecialchars($row['nombre_unidad']); ?></td>
-                                        <td class="text-center"><b><?php echo number_format($row['calificacion'], 2); ?></b></td>
-                                    </tr>
-                                <?php endwhile; ?>
-                                <tr style="background-color: #e2e8f0;">
-                                    <td><b>PROMEDIO GENERAL</b></td>
-                                    <td class="text-center"><b class="text-primary"><?php echo number_format($promedio, 2); ?></b></td>
+                            <?php if (count($filas) === 0) { ?>
+                                <tr><td colspan="<?= 4 + count($unidades) ?>" class="text-center text-muted">No hay materias asignadas a este alumno.</td></tr>
+                            <?php } ?>
+                            <?php foreach ($filas as $i => $f) { ?>
+                                <tr>
+                                    <td class="fw-bold"><?= $i + 1 ?></td>
+                                    <td><?= h($f["CLAVE_MATERIA"] . " - " . $f["NOMBRE_MATERIA"]) ?></td>
+                                    <td><?= h($f["PROFESOR"]) ?></td>
+                                    <?php foreach ($unidades as $u) {
+                                        $idU = (int)$u["ID_UNIDAD"];
+                                    ?>
+                                        <td><?= isset($f["notas"][$idU]) ? h($f["notas"][$idU]) : "—" ?></td>
+                                    <?php } ?>
+                                    <td><strong><?= $f["promedio"] !== null ? h($f["promedio"]) : "—" ?></strong></td>
                                 </tr>
-                            <?php else: ?>
-                                <tr><td colspan="2" class="text-center py-3 text-muted">No existen registros de calificaciones para este alumno.</td></tr>
-                            <?php endif; ?>
+                            <?php } ?>
                         </tbody>
                     </table>
                 </div>
-            <?php else: ?>
-                <div class="alert alert-warning text-center">No se encontró un historial de alumno vinculado a esta cuenta.</div>
-            <?php endif; ?>
+            <?php } ?>
         </div>
-        <div class="pie">Boleta escolar - Emmanuel Lopez Cornejo</div>
+        <div class="card-footer text-center text-muted small">
+            Boleta de calificaciones - Lopez Cornejo Martin Emmanuel
+        </div>
     </div>
 </div>
-
+<script src="<?= $base ?>/assets/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>

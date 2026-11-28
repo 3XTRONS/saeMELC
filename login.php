@@ -1,36 +1,40 @@
 <?php
-session_start();
-include_once("conexion.php");
+require_once __DIR__ . "/conexion.php";
 
-if (isset($_SESSION['id_usuario'])) {
-    header("Location: principal.php");
+if (isset($_SESSION["id_user"])) {
+    header("Location: " . $base . "/principal.php");
     exit;
 }
 
 $error = "";
 
-if (isset($_POST['username']) && isset($_POST['password'])) {
-    $usuario = $_POST['username'];
-    $clave = sha1($_POST['password']);
+if ($_SERVER["REQUEST_METHOD"] === "POST") {
+    $user = trim($_POST["usuario"] ?? "");
+    $pass = sha1($_POST["password"] ?? "");
 
-    $sql = "SELECT u.id_usuario, u.nombre_usuario, u.id_puesto, p.nombre_puesto 
-            FROM usuarios u 
-            INNER JOIN puestos p ON u.id_puesto = p.id_puesto 
-            WHERE u.username = '$usuario' AND u.password = '$clave' AND u.estatus_usuario = 'ALTA'";
-    
-    $res = $conexion->query($sql);
+    $stmt = $conexion->prepare(
+        "SELECT u.ID_USER, u.NOMBREUSER, u.PUESTO, u.ID_PROFESORES, u.ID_ALUMNOS, p.DESCRIPCION_PUESTO
+         FROM usuarios u
+         INNER JOIN puesto p ON p.ID_PUESTO = u.PUESTO
+         WHERE u.NOMBREUSER = ? AND u.PWUSER = ? AND u.STATUS_USER = 'ALTA'"
+    );
+    $stmt->bind_param("ss", $user, $pass);
+    $stmt->execute();
+    $fila = $stmt->get_result()->fetch_assoc();
+    $stmt->close();
 
-    if ($res && $res->num_rows > 0) {
-        $datos = $res->fetch_assoc();
-        $_SESSION['id_usuario'] = $datos['id_usuario'];
-        $_SESSION['nombre_usuario'] = $datos['nombre_usuario'];
-        $_SESSION['id_puesto'] = $datos['id_puesto'];
-        $_SESSION['nombre_puesto'] = $datos['nombre_puesto'];
+    if ($fila) {
+        $_SESSION["id_user"]     = (int)$fila["ID_USER"];
+        $_SESSION["nombre_user"] = $fila["NOMBREUSER"];
+        $_SESSION["puesto"]      = (int)$fila["PUESTO"];
+        $_SESSION["rol_nombre"]  = strtoupper($fila["DESCRIPCION_PUESTO"]);
+        $_SESSION["id_profesor"] = $fila["ID_PROFESORES"];
+        $_SESSION["id_alumno"]   = $fila["ID_ALUMNOS"];
 
-        header("Location: principal.php");
+        header("Location: " . $base . "/principal.php");
         exit;
     } else {
-        $error = "Usuario o contraseña incorrectos";
+        $error = "Usuario o contraseña incorrectos.";
     }
 }
 ?>
@@ -38,37 +42,45 @@ if (isset($_POST['username']) && isset($_POST['password'])) {
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Login - SAE</title>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/css/bootstrap.min.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Iniciar Sesión - SAE MELC</title>
+    <link href="<?= $base ?>/assets/css/bootstrap.min.css" rel="stylesheet">
     <style>
         body { background-color: #f3f1f4; }
-        .caja { background: white; max-width: 400px; margin: 80px auto; border-radius: 5px; box-shadow: 0 2px 10px rgba(0,0,0,0.15); overflow: hidden; }
-        .encabezado { background-color: #172554; color: white; padding: 20px; text-align: center; }
-        .cuerpo { padding: 25px; }
-        .btn-entrar { background-color: #9f1239; color: white; width: 100%; border: none; padding: 10px; border-radius: 4px; }
-        .btn-entrar:hover { background-color: #881337; color: white; }
+        .bg-sae-zafiro { background-color: #172554; color: #fff; }
+        .btn-sae { background-color: #9f1239; border-color: #9f1239; color: #fff; }
+        .btn-sae:hover { background-color: #881337; border-color: #881337; color: #fff; }
     </style>
 </head>
 <body>
-<div class="caja">
-    <div class="encabezado">
-        <h4>Sistema Escolar SAE</h4>
-    </div>
-    <div class="cuerpo">
-        <?php if ($error != "") { ?>
-            <div class="alert alert-danger"><?php echo $error; ?></div>
-        <?php } ?>
-        <form method="POST" action="login.php">
-            <div class="form-group">
-                <label>Usuario</label>
-                <input type="text" name="username" class="form-control" required>
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-5 col-lg-4">
+            <div class="card shadow">
+                <div class="card-header bg-sae-zafiro text-center py-3">
+                    <h4 class="mb-0">Sistema Escolar SAE</h4>
+                </div>
+                <div class="card-body p-4">
+                    <?php if ($error !== "") { ?>
+                        <div class="alert alert-danger"><?= h($error) ?></div>
+                    <?php } ?>
+                    <form method="POST">
+                        <div class="mb-3">
+                            <label class="form-label">Usuario</label>
+                            <input type="text" name="usuario" class="form-control" required autofocus>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Contraseña</label>
+                            <input type="password" name="password" class="form-control" required>
+                        </div>
+                        <button type="submit" class="btn btn-sae w-100">Iniciar Sesión</button>
+                    </form>
+                </div>
+                <div class="card-footer text-center text-muted small">
+                    Programación II - Lopez Cornejo Martin Emmanuel
+                </div>
             </div>
-            <div class="form-group">
-                <label>Contraseña</label>
-                <input type="password" name="password" class="form-control" required>
-            </div>
-            <button type="submit" class="btn-entrar">Iniciar Sesión</button>
-        </form>
+        </div>
     </div>
 </div>
 </body>

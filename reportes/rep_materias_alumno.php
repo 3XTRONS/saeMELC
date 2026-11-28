@@ -1,96 +1,129 @@
 <?php
 include_once("../conexion.php");
-include_once("../navegacion/nav.php");
+requerirRol(['ADMINISTRADOR']);
 
-$idalumn = intval($_GET['idalumn'] ?? 0);
-$alumnos_select = $conexion->query("SELECT idalumn, matricula_al, CONCAT(nombre_al, ' ', apaterno_al, ' ', amaterno_al) AS alumno FROM alumnos WHERE estatus_al = 'ALTA'");
-$materias = null;
+$idAlumno = (int)($_GET["id_alumno"] ?? 0);
+$alumnos = $conexion->query("SELECT ID_ALUMNOS, MATRICULA, NOMBRE, APELLIDO_PATERNO, APELLIDO_MATERNO FROM alumnos WHERE ESTATUS = 'ALTA' ORDER BY APELLIDO_PATERNO, NOMBRE")->fetch_all(MYSQLI_ASSOC);
 
-if ($idalumn > 0) {
-    $sql = "SELECT m.clave_mat, m.nombre_mat, m.creditos, CONCAT(p.nombre_prof, ' ', p.apaterno_prof) AS profesor
-            FROM asignaciones a
-            INNER JOIN materias m ON a.idmat = m.idmat
-            INNER JOIN profesores p ON a.idprof = p.idprof
-            WHERE a.idalumn = $idalumn AND m.estatus_mat = 'ALTA'";
-    $materias = $conexion->query($sql);
+$alumnoSel = null;
+$filas = [];
+
+if ($idAlumno > 0) {
+    $stmt = $conexion->prepare("SELECT * FROM alumnos WHERE ID_ALUMNOS = ?");
+    $stmt->bind_param("i", $idAlumno);
+    $stmt->execute();
+    $alumnoSel = $stmt->get_result()->fetch_assoc() ?: null;
+    $stmt->close();
+
+    if ($alumnoSel !== null) {
+        $stmt = $conexion->prepare(
+            "SELECT m.CLAVE_MATERIA, m.NOMBRE_MATERIA, m.CREDITOS,
+                    CONCAT(p.NOMBRE, ' ', p.APELLIDO_PATERNO, ' ', p.APELLIDO_MATERNO) AS PROFESOR
+             FROM asignatura s
+             INNER JOIN materias m ON m.ID_MATERIAS = s.ID_MATERIAS
+             INNER JOIN profesores p ON p.ID_PROFESORES = s.ID_PROFESORES
+             WHERE s.ID_ALUMNOS = ?
+             ORDER BY m.CLAVE_MATERIA"
+        );
+        $stmt->bind_param("i", $idAlumno);
+        $stmt->execute();
+        $filas = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
+        $stmt->close();
+    }
+}
+
+if (isset($_GET["descargar"]) && $alumnoSel !== null && count($filas) > 0) {
+    $nomAl = $alumnoSel["MATRICULA"] . " - " . $alumnoSel["NOMBRE"] . " " . $alumnoSel["APELLIDO_PATERNO"] . " " . $alumnoSel["APELLIDO_MATERNO"];
+    header("Content-Type: application/vnd.ms-excel; charset=utf-8");
+    header("Content-Disposition: attachment; filename=\"reporte_materias_alumno_" . (int)$idAlumno . ".xls\"");
+    echo "\xEF\xBB\xBF<table border='1'>";
+    echo "<tr><th colspan='5'>Reporte: Materias por Alumno — " . h($nomAl) . "</th></tr>";
+    echo "<tr><th>#</th><th>Clave</th><th>Materia</th><th>Créditos</th><th>Profesor</th></tr>";
+    foreach ($filas as $i => $f) {
+        echo "<tr><td>" . ($i + 1) . "</td><td>" . h($f["CLAVE_MATERIA"]) . "</td><td>" . h($f["NOMBRE_MATERIA"]) . "</td><td>" . h($f["CREDITOS"]) . "</td><td>" . h($f["PROFESOR"]) . "</td></tr>";
+    }
+    echo "</table>";
+    exit;
 }
 ?>
-
 <!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Reporte: Materias por Alumno</title>
-    <style>
-        body { background-color: #f3f1f4; }
-        .formulario { background-color: white; max-width: 900px; margin: 30px auto; border-radius: 5px; box-shadow: 0 2px 10px rgba(0,0,0,0.15); overflow: hidden; }
-        .titulo { background-color: #172554; color: white; padding: 15px; text-align: center; }
-        .contenido { padding: 25px; }
-        .pie { text-align: center; padding: 15px; color: #666; font-size: 0.9rem; border-top: 1px solid #eee; }
-        @media print { nav, .navbar, .btn, form, .pie, .no-print { display: none !important; } }
-    </style>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reporte: Materias por Alumno - SAE MELC</title>
+    <link href="<?= $base ?>/assets/css/bootstrap.min.css" rel="stylesheet">
 </head>
 <body>
+<?php include_once("../navegacion/nav.php"); ?>
 
-<div class="container">
-    <div class="formulario">
-        <div class="titulo"><h2 class="m-0">Reporte: Materias por Alumno</h2></div>
-        <div class="contenido">
-            <form method="GET" action="rep_materias_alumno.php" class="row align-items-end mb-4 no-print">
-                <div class="col-md-9 mb-2">
-                    <label class="font-weight-bold">Selecciona Alumno</label>
-                    <select name="idalumn" class="form-control" required>
-                        <option value="">Selecciona un alumno...</option>
-                        <?php if ($alumnos_select): ?>
-                            <?php while ($al = $alumnos_select->fetch_assoc()): ?>
-                                <option value="<?php echo $al['idalumn']; ?>" <?php echo ($idalumn == $al['idalumn']) ? 'selected' : ''; ?>>
-                                    <?php echo htmlspecialchars($al['matricula_al'] . ' - ' . $al['alumno']); ?>
+<div class="container mt-5">
+    <div class="card shadow">
+        <div class="card-header bg-sae-zafiro text-center py-3">
+            <h2 class="mb-0">Reporte: Materias por Alumno</h2>
+        </div>
+        <div class="card-body p-4">
+            <form method="GET" class="mb-4 no-imprimir">
+                <label class="form-label fw-bold">Selecciona Alumno</label>
+                <div class="row g-2">
+                    <div class="col-md-9">
+                        <select name="id_alumno" class="form-select" required>
+                            <option value="">Selecciona un alumno...</option>
+                            <?php foreach ($alumnos as $a) { ?>
+                                <option value="<?= $a["ID_ALUMNOS"] ?>" <?= $idAlumno === (int)$a["ID_ALUMNOS"] ? "selected" : "" ?>>
+                                    <?= h($a["MATRICULA"] . " - " . $a["NOMBRE"] . " " . $a["APELLIDO_PATERNO"] . " " . $a["APELLIDO_MATERNO"]) ?>
                                 </option>
-                            <?php endwhile; ?>
-                        <?php endif; ?>
-                    </select>
-                </div>
-                <div class="col-md-3 mb-2">
-                    <button type="submit" class="btn btn-secondary w-100">Consultar</button>
+                            <?php } ?>
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <button type="submit" class="btn btn-secondary w-100">Generar Reporte</button>
+                    </div>
                 </div>
             </form>
 
-            <?php if ($idalumn > 0): ?>
-                <div class="d-flex justify-content-end mb-3 no-print">
-                    <button onclick="window.print();" class="btn btn-outline-dark">🖨️ Imprimir / Guardar PDF</button>
+            <?php if ($alumnoSel !== null) { ?>
+                <div class="d-flex justify-content-end gap-2 mb-3 no-imprimir">
+                    <?php if (count($filas) > 0) { ?>
+                        <a href="?id_alumno=<?= $idAlumno ?>&descargar=1" class="btn btn-success btn-sm">Descargar Excel</a>
+                    <?php } ?>
+                    <button type="button" class="btn btn-outline-secondary btn-sm" onclick="window.print()">Imprimir / Guardar PDF</button>
                 </div>
 
                 <div class="table-responsive">
-                    <table class="table table-bordered table-striped">
-                        <thead style="background-color: #212529; color: white;">
+                    <table class="table table-bordered table-striped align-middle">
+                        <thead class="table-dark">
                             <tr>
+                                <th style="width: 60px;">#</th>
                                 <th>Clave</th>
                                 <th>Materia</th>
                                 <th>Créditos</th>
-                                <th>Profesor Asignado</th>
+                                <th>Profesor</th>
                             </tr>
                         </thead>
                         <tbody>
-                            <?php if ($materias && $materias->num_rows > 0): ?>
-                                <?php while ($row = $materias->fetch_assoc()): ?>
-                                    <tr>
-                                        <td><?php echo htmlspecialchars($row['clave_mat']); ?></td>
-                                        <td><?php echo htmlspecialchars($row['nombre_mat']); ?></td>
-                                        <td><?php echo htmlspecialchars($row['creditos']); ?></td>
-                                        <td><?php echo htmlspecialchars($row['profesor']); ?></td>
-                                    </tr>
-                                <?php endwhile; ?>
-                            <?php else: ?>
-                                <tr><td colspan="4" class="text-center py-3 text-muted">El alumno no tiene materias asignadas.</td></tr>
-                            <?php endif; ?>
+                            <?php if (count($filas) === 0) { ?>
+                                <tr><td colspan="5" class="text-center text-muted">Este alumno no tiene materias asignadas.</td></tr>
+                            <?php } ?>
+                            <?php foreach ($filas as $i => $f) { ?>
+                                <tr>
+                                    <td class="fw-bold"><?= $i + 1 ?></td>
+                                    <td><?= h($f["CLAVE_MATERIA"]) ?></td>
+                                    <td><?= h($f["NOMBRE_MATERIA"]) ?></td>
+                                    <td><?= h($f["CREDITOS"]) ?></td>
+                                    <td><?= h($f["PROFESOR"]) ?></td>
+                                </tr>
+                            <?php } ?>
                         </tbody>
                     </table>
                 </div>
-            <?php endif; ?>
+            <?php } ?>
         </div>
-        <div class="pie">Reporte de materias por alumno - Emmanuel Lopez Cornejo</div>
+        <div class="card-footer text-center text-muted small">
+            Reporte de materias por alumno - Lopez Cornejo Martin Emmanuel
+        </div>
     </div>
 </div>
-
+<script src="<?= $base ?>/assets/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>

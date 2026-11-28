@@ -1,7 +1,7 @@
 <?php
-session_start();
-session_unset();    // Limpia todas las variables de sesión
-session_destroy();  // Destruye la sesión en el servidor
-header("Location: login.php");
+require_once __DIR__ . "/conexion.php";
+session_unset();
+session_destroy();
+header("Location: " . $base . "/login.php");
 exit;
 ?>

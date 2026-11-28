@@ -1,185 +1,173 @@
 <?php
 include_once("../conexion.php");
-include_once("../navegacion/nav.php");
+requerirRol(['ADMINISTRADOR']);
 
 $mensaje = "";
+$editId = (int)($_GET["editar"] ?? $_POST["id_asignatura"] ?? 0);
+$editarFila = null;
 
-// 1. Eliminar registro al dar clic en 🗑️
-if (isset($_GET['eliminar'])) {
-    $idasignatura = intval($_GET['eliminar']);
-    $stmt_del = $conexion->prepare("DELETE FROM asignaciones WHERE idasignatura = ?");
-    if ($stmt_del) {
-        $stmt_del->bind_param("i", $idasignatura);
-        if ($stmt_del->execute()) {
-            $mensaje = "<div class='alert alert-success mt-3'>Asignación eliminada correctamente.</div>";
-        }
-        $stmt_del->close();
+if ($editId > 0 && $_SERVER["REQUEST_METHOD"] !== "POST") {
+    $stmt = $conexion->prepare("SELECT * FROM asignatura WHERE ID_ASIGNATURA = ?");
+    $stmt->bind_param("i", $editId);
+    $stmt->execute();
+    $editarFila = $stmt->get_result()->fetch_assoc() ?: null;
+    $stmt->close();
+    if (!$editarFila) {
+        $editId = 0;
     }
 }
 
-// 2. Registrar nueva asignación
-if ($_SERVER["REQUEST_METHOD"] == "POST") {
-    $idmat   = $_POST['idmat'] ?? '';
-    $idalumn = $_POST['idalumn'] ?? '';
-    $idprof  = $_POST['idprof'] ?? '';
+if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["asignar"])) {
+    $idMat  = (int)($_POST["id_materia"] ?? 0);
+    $idAlum = (int)($_POST["id_alumno"] ?? 0);
+    $idProf = (int)($_POST["id_profesor"] ?? 0);
+    $idAsigPost = (int)($_POST["id_asignatura"] ?? 0);
 
-    if (!empty($idmat) && !empty($idalumn) && !empty($idprof)) {
-        $stmt = $conexion->prepare("INSERT INTO asignaciones (idmat, idalumn, idprof) VALUES (?, ?, ?)");
-        $stmt->bind_param("iii", $idmat, $idalumn, $idprof);
-
-        if ($stmt->execute()) {
-            $mensaje = "<div class='alert alert-success mt-3'>¡Materia asignada correctamente!</div>";
+    if ($idMat > 0 && $idAlum > 0 && $idProf > 0) {
+        if ($idAsigPost > 0) {
+            $stmt = $conexion->prepare(
+                "UPDATE asignatura SET ID_MATERIAS = ?, ID_ALUMNOS = ?, ID_PROFESORES = ? WHERE ID_ASIGNATURA = ?"
+            );
+            $stmt->bind_param("iiii", $idMat, $idAlum, $idProf, $idAsigPost);
+            $stmt->execute();
+            $stmt->close();
+            $mensaje = '<div class="alert alert-success">Asignación actualizada correctamente.</div>';
+            $editId = 0;
+            $editarFila = null;
         } else {
-            $mensaje = "<div class='alert alert-danger mt-3'>Error al asignar: " . $stmt->error . "</div>";
+            $stmt = $conexion->prepare(
+                "INSERT INTO asignatura (ID_MATERIAS, ID_ALUMNOS, ID_PROFESORES) VALUES (?, ?, ?)
+                 ON DUPLICATE KEY UPDATE ID_PROFESORES = VALUES(ID_PROFESORES)"
+            );
+            $stmt->bind_param("iii", $idMat, $idAlum, $idProf);
+            $stmt->execute();
+            $stmt->close();
+            $mensaje = '<div class="alert alert-success">Asignación guardada correctamente.</div>';
         }
-        $stmt->close();
     }
 }
 
-$materias   = $conexion->query("SELECT idmat, clave_mat, nombre_mat FROM materias WHERE estatus_mat = 'ALTA'");
-$alumnos    = $conexion->query("SELECT idalumn, matricula_al, nombre_al, apaterno_al, amaterno_al FROM alumnos WHERE estatus_al = 'ALTA'");
-$profesores = $conexion->query("SELECT idprof, nombre_prof, apaterno_prof, amaterno_prof FROM profesores WHERE estatus_prof = 'ALTA'");
+if (isset($_GET["eliminar"])) {
+    $idAsig = (int)$_GET["eliminar"];
+    $stmt = $conexion->prepare("DELETE FROM asignatura WHERE ID_ASIGNATURA = ?");
+    $stmt->bind_param("i", $idAsig);
+    $stmt->execute();
+    $stmt->close();
+    header("Location: asignacion_materia.php");
+    exit;
+}
 
-$asignaturas = $conexion->query("SELECT asig.idasignatura, m.nombre_mat AS materia, CONCAT(a.nombre_al, ' ', a.apaterno_al) AS alumno, CONCAT(p.nombre_prof, ' ', p.apaterno_prof) AS profesor FROM asignaciones asig JOIN materias m ON asig.idmat = m.idmat JOIN alumnos a ON asig.idalumn = a.idalumn JOIN profesores p ON asig.idprof = p.idprof");
+$materias = $conexion->query("SELECT * FROM materias WHERE ESTATUS = 'ALTA' ORDER BY CLAVE_MATERIA")->fetch_all(MYSQLI_ASSOC);
+$alumnos  = $conexion->query("SELECT * FROM alumnos WHERE ESTATUS = 'ALTA' ORDER BY APELLIDO_PATERNO, NOMBRE")->fetch_all(MYSQLI_ASSOC);
+$profes   = $conexion->query("SELECT * FROM profesores WHERE ESTATUS = 'ALTA' ORDER BY APELLIDO_PATERNO, NOMBRE")->fetch_all(MYSQLI_ASSOC);
+
+$lista = $conexion->query(
+    "SELECT s.ID_ASIGNATURA, m.CLAVE_MATERIA, m.NOMBRE_MATERIA,
+            CONCAT(a.MATRICULA, ' - ', a.NOMBRE, ' ', a.APELLIDO_PATERNO) AS alumno,
+            CONCAT(p.NOMBRE, ' ', p.APELLIDO_PATERNO) AS profesor
+     FROM asignatura s
+     INNER JOIN materias m ON m.ID_MATERIAS = s.ID_MATERIAS
+     INNER JOIN alumnos a ON a.ID_ALUMNOS = s.ID_ALUMNOS
+     INNER JOIN profesores p ON p.ID_PROFESORES = s.ID_PROFESORES
+     ORDER BY m.CLAVE_MATERIA, a.APELLIDO_PATERNO"
+);
 ?>
-
 <!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Asignación de materias</title>
-    <style>
-        body { background-color: #f8f9fa; }
-        .form-container {
-            max-width: 800px;
-            margin: 40px auto;
-            background: #ffffff;
-            border-radius: 8px;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.15);
-            overflow: hidden;
-        }
-        .form-header {
-            background-color: #1a2b4c;
-            color: white;
-            padding: 20px;
-            text-align: center;
-        }
-        .form-body { padding: 30px; }
-        .btn-custom {
-            background-color: #800020;
-            color: white;
-        }
-        .btn-custom:hover { background-color: #600018; color: white; }
-        .footer-text {
-            text-align: center;
-            padding: 15px;
-            font-size: 0.9em;
-            color: #6c757d;
-            border-top: 1px solid #dee2e6;
-        }
-        .btn-emoji {
-            border: none;
-            padding: 4px 8px;
-            border-radius: 4px;
-            text-decoration: none;
-            display: inline-block;
-        }
-        .btn-delete { background-color: #dc3545; color: white; }
-        .btn-delete:hover { background-color: #bb2d3b; color: white; }
-    </style>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Asignación de Materias - SAE MELC</title>
+    <link href="<?= $base ?>/assets/css/bootstrap.min.css" rel="stylesheet">
 </head>
 <body>
+<?php include_once("../navegacion/nav.php"); ?>
 
-<div class="container">
-    <div class="form-container">
-        <div class="form-header">
-            <h2>Asignación de materias</h2>
+<div class="container mt-5">
+    <div class="card shadow">
+        <div class="card-header bg-sae-zafiro text-center">
+            <h2 class="mb-0">Asignación de Materias</h2>
         </div>
-        
-        <div class="form-body">
-            <?php echo $mensaje; ?>
+        <div class="card-body">
+            <?= $mensaje ?>
 
-            <form method="POST" action="">
-                <div class="form-group mb-3">
-                    <label for="idmat" class="font-weight-bold">Id materia</label>
-                    <select name="idmat" id="idmat" class="form-control" required>
-                        <option value="">Selecciona una materia...</option>
-                        <?php while ($row = $materias->fetch_assoc()): ?>
-                            <option value="<?php echo $row['idmat']; ?>">
-                                <?php echo $row['clave_mat'] . " - " . $row['nombre_mat']; ?>
-                            </option>
-                        <?php endwhile; ?>
+            <form method="POST" action="asignacion_materia.php" class="row g-3 mb-4">
+                <input type="hidden" name="asignar" value="1">
+                <?php if ($editarFila !== null) { ?>
+                    <input type="hidden" name="id_asignatura" value="<?= (int)$editarFila['ID_ASIGNATURA'] ?>">
+                <?php } ?>
+
+                <div class="col-md-4">
+                    <label class="form-label">Materia</label>
+                    <select name="id_materia" class="form-select" required>
+                        <option value="">Selecciona materia...</option>
+                        <?php foreach ($materias as $m) {
+                            $sel = ($editarFila !== null && (int)$editarFila['ID_MATERIAS'] === (int)$m['ID_MATERIAS']) ? 'selected' : '';
+                        ?>
+                            <option value="<?= $m['ID_MATERIAS'] ?>" <?= $sel ?>><?= h($m['CLAVE_MATERIA'] . " - " . $m['NOMBRE_MATERIA']) ?></option>
+                        <?php } ?>
                     </select>
                 </div>
 
-                <div class="form-group mb-3">
-                    <label for="idalumn" class="font-weight-bold">Id alumno</label>
-                    <select name="idalumn" id="idalumn" class="form-control" required>
-                        <option value="">Selecciona un alumno...</option>
-                        <?php while ($row = $alumnos->fetch_assoc()): ?>
-                            <option value="<?php echo $row['idalumn']; ?>">
-                                <?php echo $row['matricula_al'] . " - " . $row['nombre_al'] . " " . $row['apaterno_al']; ?>
-                            </option>
-                        <?php endwhile; ?>
+                <div class="col-md-4">
+                    <label class="form-label">Alumno</label>
+                    <select name="id_alumno" class="form-select" required>
+                        <option value="">Selecciona alumno...</option>
+                        <?php foreach ($alumnos as $a) {
+                            $sel = ($editarFila !== null && (int)$editarFila['ID_ALUMNOS'] === (int)$a['ID_ALUMNOS']) ? 'selected' : '';
+                        ?>
+                            <option value="<?= $a['ID_ALUMNOS'] ?>" <?= $sel ?>><?= h($a['MATRICULA'] . " - " . $a['NOMBRE'] . " " . $a['APELLIDO_PATERNO']) ?></option>
+                        <?php } ?>
                     </select>
                 </div>
 
-                <div class="form-group mb-4">
-                    <label for="idprof" class="font-weight-bold">Id profesor</label>
-                    <select name="idprof" id="idprof" class="form-control" required>
-                        <option value="">Selecciona un profesor...</option>
-                        <?php while ($row = $profesores->fetch_assoc()): ?>
-                            <option value="<?php echo $row['idprof']; ?>">
-                                <?php echo $row['nombre_prof'] . " " . $row['apaterno_prof']; ?>
-                            </option>
-                        <?php endwhile; ?>
+                <div class="col-md-4">
+                    <label class="form-label">Profesor</label>
+                    <select name="id_profesor" class="form-select" required>
+                        <option value="">Selecciona profesor...</option>
+                        <?php foreach ($profes as $p) {
+                            $sel = ($editarFila !== null && (int)$editarFila['ID_PROFESORES'] === (int)$p['ID_PROFESORES']) ? 'selected' : '';
+                        ?>
+                            <option value="<?= $p['ID_PROFESORES'] ?>" <?= $sel ?>><?= h($p['NOMBRE'] . " " . $p['APELLIDO_PATERNO']) ?></option>
+                        <?php } ?>
                     </select>
                 </div>
 
-                <button type="submit" class="btn btn-custom">Asignar materia</button>
+                <div class="col-12 d-flex gap-2">
+                    <button type="submit" class="btn btn-sae">
+                        <?= $editarFila !== null ? "Actualizar asignación" : "Asignar Materia" ?>
+                    </button>
+                    <?php if ($editarFila !== null) { ?>
+                        <a href="asignacion_materia.php" class="btn btn-outline-secondary">Cancelar edición</a>
+                    <?php } ?>
+                </div>
             </form>
-        </div>
 
-        <div class="footer-text">
-            Asignación de materias - Programación II Emmanuel Lopez Cornejo
-        </div>
-    </div>
-
-    <!-- TABLA DE ASIGNATURAS REGISTRADAS -->
-    <div class="container mt-4 mb-5" style="max-width: 800px;">
-        <h3 class="mb-3">Asignaturas registradas</h3>
-        <table class="table table-bordered table-striped">
-            <thead class="thead-dark">
-                <tr>
-                    <th>Id asignatura</th>
-                    <th>Materia</th>
-                    <th>Alumno</th>
-                    <th>Profesor</th>
-                    <th class="text-center">Acciones</th>
-                </tr>
-            </thead>
-            <tbody>
-                <?php if ($asignaturas->num_rows > 0): ?>
-                    <?php while ($row = $asignaturas->fetch_assoc()): ?>
+            <div class="table-responsive">
+                <table class="table table-bordered table-striped align-middle">
+                    <thead class="table-dark">
+                        <tr><th>Clave</th><th>Materia</th><th>Alumno</th><th>Profesor</th><th class="text-center">Acciones</th></tr>
+                    </thead>
+                    <tbody>
+                        <?php while ($f = $lista->fetch_assoc()) { ?>
                         <tr>
-                            <td><?php echo $row['idasignatura']; ?></td>
-                            <td><?php echo $row['materia']; ?></td>
-                            <td><?php echo $row['alumno']; ?></td>
-                            <td><?php echo $row['profesor']; ?></td>
+                            <td><?= h($f['CLAVE_MATERIA']) ?></td>
+                            <td><?= h($f['NOMBRE_MATERIA']) ?></td>
+                            <td><?= h($f['alumno']) ?></td>
+                            <td><?= h($f['profesor']) ?></td>
                             <td class="text-center">
-                                <a href="asignacion_materia.php?eliminar=<?php echo $row['idasignatura']; ?>" class="btn-emoji btn-delete" onclick="return confirm('¿Eliminar asignación?');" title="Eliminar de BD">🗑️</a>
+                                <a href="asignacion_materia.php?editar=<?= $f['ID_ASIGNATURA'] ?>" class="btn btn-warning btn-sm">Editar</a>
+                                <a href="asignacion_materia.php?eliminar=<?= $f['ID_ASIGNATURA'] ?>" class="btn btn-danger btn-sm" onclick="return confirm('¿Eliminar esta asignación?');">Quitar</a>
                             </td>
                         </tr>
-                    <?php endwhile; ?>
-                <?php else: ?>
-                    <tr>
-                        <td colspan="5" class="text-center">No hay asignaturas registradas aún.</td>
-                    </tr>
-                <?php endif; ?>
-            </tbody>
-        </table>
+                        <?php } ?>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        <div class="card-footer text-center text-muted">Asignación de Materias - Lopez Cornejo Martin Emmanuel</div>
     </div>
 </div>
-
+<script src="<?= $base ?>/assets/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
